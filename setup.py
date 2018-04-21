@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 from setuptools import setup
 import glob
@@ -28,25 +29,22 @@ def get_revision():
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-VERSIONPIP = '0.0.1'
-VERSION = VERSIONPIP+'dev'+get_revision()
-
-with open('py/rvspecfit/_version.py','w') as fp:
-    print('VERSION="%s"'%(VERSION),file=fp)
+VERSION = '0.0.1'
+#VERSION = VERSIONPIP+'dev'+get_revision()
 
 setup(
-    name = "rvspecfit",
-    version = VERSIONPIP,
+    name = "sqlutilpy",
+    version = VERSION,
     author = "Sergey Koposov",
     author_email = "skoposov@cmu.edu",
-    description = ("Radial velocity code."),
+    description = ("Database query code"),
     license = "BSD",
     keywords = "example documentation tutorial",
     url = "http://github.com/segasai/rvspecfit",
-    packages=['rvspecfit','rvspecfit/desi', 'rvspecfit/weave'],
-    scripts = [fname for fname in glob.glob(os.path.join('bin', '*'))],
+    packages=['sqlutilpy'],
+    #scripts = [fname for fname in glob.glob(os.path.join('bin', '*'))],
     package_dir={'':'py/'},
-    package_data={'rvspecfit':['tests/']},
+    package_data={'sqlutilpy':['tests/']},
     long_description=read('README'),
     classifiers=[
         "Development Status :: 3 - Alpha",
