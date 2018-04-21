@@ -1,3 +1,2 @@
 numpy
 psycopg2
-sqlite
