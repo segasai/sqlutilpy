@@ -23,6 +23,9 @@ before_install:
   - sudo echo "host    all         all         ::1/128               trust" >> /etc/postgresql/$PGVERSION/main/pg_hba.conf
   - sudo /etc/init.d/postgresql restart
 
+matrix:
+  - PGVERSION=9.6
+
 before_script:
   - createuser -U postgres -s travis
   - createuser 
