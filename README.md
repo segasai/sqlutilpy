@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/segasai/sqlutilpy.svg?branch=master)](https://travis-ci.org/segasai/sqlutilpy)
+
 # sqlutilpy
 Python module to query SQL databases and return numpy arrays 
 By default the module only works for PostgreSQL and sqlite databases
