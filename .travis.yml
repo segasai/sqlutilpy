@@ -7,6 +7,7 @@ python:
   - "3.5"
 
 before_install:
+  - export PGVERSION=9.6
   - psql --version
   - sudo /etc/init.d/postgresql stop
   - sudo apt-get -y --purge remove postgresql libpq-dev libpq5 postgresql-client-common postgresql-common
@@ -23,12 +24,8 @@ before_install:
   - sudo echo "host    all         all         ::1/128               trust" >> /etc/postgresql/$PGVERSION/main/pg_hba.conf
   - sudo /etc/init.d/postgresql restart
 
-matrix:
-  - PGVERSION=9.6
-
 before_script:
   - createuser -U postgres -s travis
-  - createuser 
 
 install:
   - pip install -r requirements.txt
