@@ -98,7 +98,7 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
     return cur
 
 
-def fromrecords(recList, dtype=None, intNullVal=None):
+def __fromrecords(recList, dtype=None, intNullVal=None):
     """ This function was taken from np.core.records and updated to
                     support conversion null integers to intNullVal
     """
@@ -151,7 +151,7 @@ def __converter(qIn, qOut, endEvent, dtype, intNullVal):
         except queue.Empty:
             continue
         try:
-            res = fromrecords(tups, dtype=dtype, intNullVal=intNullVal)
+            res = __fromrecords(tups, dtype=dtype, intNullVal=intNullVal)
         except:
             print('Failed to convert input data into array')
             endEvent.set()
