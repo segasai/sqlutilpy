@@ -32,10 +32,10 @@ create table sqlutil_test (sicol smallint, intcol int, bigicol bigint,
 textcol varchar);
 insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
 textcol)
-        values( 1,2,3,4.,5.,'2018-01-01 10:00:00','tester');
+        values( 1,2,3,4.,5.,'2018-01-01 10:00:00','tester1');
 insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
 textcol)
-        values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester');
+        values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester2');
         ''')
         conn.commit()
         self.conn = conn;
@@ -52,21 +52,28 @@ textcol)
         pass
 
     def test_get(self):
-        a,b,c,d,e = sqlutil.get('select sicol,intcol,bigicol,realcol,dpcol from sqlutil_test order by sicol',**self.kw)
+        a,b,c,d,e,f = sqlutil.get('select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol',**self.kw)
         self.assertTrue((a==np.array([1,11])).all())
         self.assertTrue((b==np.array([2,12])).all())
         self.assertTrue((c==np.array([3,13])).all())
         self.assertTrue((d==np.array([4,14])).all())
         self.assertTrue((e==np.array([5,15])).all())
+        self.assertTrue((f==np.array(['tester1','tester2'])).all())
+
+def test_get_dict():
+    R0 = sqlutil.get('select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol',asDict=True,**self.kw)
+    Rd = sqlutil.get('select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol',asDict=True,**self.kw)
+    for i,k in enumerate('sicol,intcol,bigicol,realcol,dpcol,textcol'.split(',')):
+        self.assertTrue((Rd[k]==R0[i]).all())
     
     def test_upload(self):
-        mytab='tab'
+        mytab='sqlutil_test_tab'
         xi=np.arange(10)
         xf=getrand(10,True)
         sqlutil.upload(mytab,(xi,xf),('xcol','ycol'),**self.kw)
         yi,yf=sqlutil.get('select xcol,ycol from %s'%(mytab),**self.kw)
         self.assertTrue((xi==yi).all())
         self.assertTrue((xi==yi).all())
-
+        sqlutil.execute('drop table %s'%mytab,**self.kw)
 if __name__=='__main__':
     unittest.main()
