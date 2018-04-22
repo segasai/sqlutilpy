@@ -7,7 +7,7 @@ Python module to query SQL databases and return numpy arrays, upload
 tables and cross-query local arrays with the tables in the DB.
 The module only works for PostgreSQL and sqlite databases.
 
-The full documentation is available [!here](http://sqlutilpy.readthedocs.io/en/latest/)
+The full documentation is available [here](http://sqlutilpy.readthedocs.io/en/latest/)
 
 
 ## Querying the database and retrieving the results
@@ -27,11 +27,11 @@ results
 
 Imagine you have arrays myid and y and you want to to extract all the 
 information from somebigtable for objects with id=myid. In principle
-you could upload the arrays in the DB and run a query, but local_join function does that for you 
-Here
->>> myid = np.arange(10)
->>> y = x**.5
->>> sqlutilpy.local_join('select * from mytmptable as m, somebigtable as s where s.id=m.myid order by m.myid',                                                                           'mytmptable',(x,y),('myid','ycol'))
+you could upload the arrays in the DB and run a query, but local_join function does that for you.
+
+> myid = np.arange(10)
+> y = x**.5
+> sqlutilpy.local_join('select * from mytmptable as m, somebigtable as s where s.id=m.myid order by m.myid',                                                                           'mytmptable',(x,y),('myid','ycol'))
 It executes a query as if you arrays where in a mytmptable. ( behind the scenes
 it uploads the data to the db and runs a query)
 
