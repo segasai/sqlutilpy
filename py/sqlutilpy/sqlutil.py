@@ -210,11 +210,11 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
         21: 'i2',
         23: 'i4',
         1007: 'i4',
-        25: '|S%d' % strLength,
+        25: '|U%d' % strLength,
         700: 'f4',
         701: 'f8',
-        1042: '|S%d' % strLength,  # character()
-        1043: '|S%d' % strLength,  # varchar
+        1042: '|U%d' % strLength,  # character()
+        1043: '|U%d' % strLength,  # varchar
         1700: 'f8',	 # numeric
         1114: '<M8[us]',  # timestamp
         1082: '<M8[us]'	 # date
