@@ -1,9 +1,14 @@
 [![Build Status](https://travis-ci.org/segasai/sqlutilpy.svg?branch=master)](https://travis-ci.org/segasai/sqlutilpy)
+[![Documentation Status](https://readthedocs.org/projects/sqlutilpy/badge/?version=latest)](http://sqlutilpy.readthedocs.io/en/latest/?badge=latest)
+
 
 # sqlutilpy
 Python module to query SQL databases and return numpy arrays, upload
 tables and cross-query local arrays with the tables in the DB.
 The module only works for PostgreSQL and sqlite databases.
+
+The full documentation is available [!here](http://sqlutilpy.readthedocs.io/en/latest/)
+
 
 ## Querying the database and retrieving the results
 > ra,dec = sqlutil.get('select ra,dec from mytable', host='HOST_NAME_OF_MY_PG_SERVER', db='THE_NAME_OF_MY_DB')
