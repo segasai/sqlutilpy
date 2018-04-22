@@ -34,7 +34,7 @@ from select import select
 from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
 
-def wait_select_inter(conn):
+def __wait_select_inter(conn):
     """ Make the queries interruptable by Ctrl-C
     
     Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/"""
@@ -56,7 +56,7 @@ def wait_select_inter(conn):
             continue
 
 
-psycopg2.extensions.set_wait_callback(wait_select_inter)
+psycopg2.extensions.set_wait_callback(__wait_select_inter)
 
 
 def getConnection(db=None, driver=None, user=None,
