@@ -1,10 +1,23 @@
 import unittest
 import os
 import psycopg2
+import numpy as np
 import sqlutilpy as sqlutil
 PG_DB = os.environ['SQLUTIL_TEST_PG_DB']
 PG_HOST = os.environ['SQLUTIL_TEST_PG_HOST']
 PG_USER = os.environ['SQLUTIL_TEST_PG_USER']
+def getrand(N,float=False):
+    #simple deterministic pseudo-random number generator
+    a,c=1103515245,12345
+    m= 2^31
+    arr=np.zeros(N)
+    arr[0]=1;
+    for i in range(1,N):
+        arr[i] = (a*arr[i-1]+c)%m
+    if float:
+        return arr*1./m
+    else:
+        return arr
 
 class PostgresTest(unittest.TestCase):
     def setUp(self):
@@ -26,6 +39,7 @@ textcol)
         ''')
         conn.commit()
         self.conn = conn;
+        self.kw = {'host':PG_HOST,'user':PG_USER,'db':PG_DB}
 
     def tearDown(self):
         self.conn.cursor().execute('drop table sqlutil_test;')
@@ -38,9 +52,21 @@ textcol)
         pass
 
     def test_get(self):
-        kw = {'host':PG_HOST,'user':PG_USER,'db':PG_DB}
-        a,b,c,d = sqlutil.get('select sicol,intcol,realcol,dpcol from sqlutil_test',**kw)
-        
+        a,b,c,d,e = sqlutil.get('select sicol,intcol,bigicol,realcol,dpcol from sqlutil_test order by sicol',**self.kw)
+        self.assertTrue((a==np.array([1,11])).all())
+        self.assertTrue((b==np.array([2,12])).all())
+        self.assertTrue((c==np.array([3,13])).all())
+        self.assertTrue((d==np.array([4,14])).all())
+        self.assertTrue((e==np.array([5,15])).all())
+    
+    def test_upload(self):
+        mytab='tab'
+        xi=np.arange(10)
+        xf=getrand(10,True)
+        sqlutil.upload(mytab,(xi,xf),('xcol','ycol'),**self.kw)
+        yi,yf=sqlutil.get('select xcol,ycol from %s'%(mytab),**self.kw)
+        self.assertTrue((xi==yi).all())
+        self.assertTrue((xi==yi).all())
 
 if __name__=='__main__':
     unittest.main()
