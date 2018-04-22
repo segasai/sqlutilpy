@@ -1,21 +1,6 @@
+"""Sqlutilpy module to access SQL databases
+"""
 from __future__ import print_function
-
-# This file is part of astrolibpy
-#
-#	 astrolibpy is free software: you can redistribute it and/or modify
-#	 it under the terms of the GNU General Public License as published by
-#	 the Free Software Foundation, either version 3 of the License, or
-#	 (at your option) any later version.
-#
-#	astrolibpy is distributed in the hope that it will be useful,
-#	 but WITHOUT ANY WARRANTY; without even the implied warranty of
-#	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#	 GNU General Public License for more details.
-#
-#	 You should have received a copy of the GNU General Public License
-#	 along with astrolibpy.	 If not, see <http://www.gnu.org/licenses/>.
-
-
 import types
 import numpy
 import sys
@@ -50,8 +35,9 @@ from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
 
 def wait_select_inter(conn):
-    # Make the queries interruptable by Ctrl-C
-    # Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/
+    """ Make the queries interruptable by Ctrl-C
+    
+    Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/"""
     while True:
         try:
             state = conn.poll()
@@ -75,6 +61,7 @@ psycopg2.extensions.set_wait_callback(wait_select_inter)
 
 def getConnection(db=None, driver=None, user=None,
                   password=None, host=None, port=5432, timeout=None):
+    """ Retrieve the connection to the DB object """
     if driver == 'psycopg2':
         conn_str = "dbname=%s host=%s port=%d" % (db, host, port)
         if user is not None:
@@ -93,6 +80,7 @@ def getConnection(db=None, driver=None, user=None,
 
 
 def getCursor(conn, driver=None, preamb=None, notNamed=False):
+    """Retrieve the cursor"""
     if driver == 'psycopg2':
         cur = conn.cursor()
         if preamb is not None:
@@ -178,14 +166,17 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
         asDict=False, intNullVal=-9999):
     '''Executes the sql query and returns the tuple or dictionary with the numpy arrays.
 
-    Parameters:
-    ------
-    query : string with the query you want to execute, can include question 
-                    marks to refer to query parameters
-    params : tuple with query parameters
-    conn : the connection object to the DB (optional) to avoid reconnecting
-    asDict : boolean to retrieve the results as a dictionary with column names
-                    as keys
+    Parameters
+    ----------
+    query : string
+         Query you want to execute, can include question 
+          marks to refer to query parameters
+    params : tuple 
+         Query parameters
+    conn : object
+          The connection object to the DB (optional) to avoid reconnecting
+    asDict : boolean 
+          Flag whether to retrieve the results as a dictionary with column names as keys
     strLength : all the strings will be truncated to this length
     intNullVal : all the integer columns with nulls will have null replaced by
                              this value
@@ -200,6 +191,7 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
     Example:
     >>> a, b, c = sqlutil.get('select ra,dec,d25 from rc3')
     You can also use the parameters in your query:
+
     Example:
     >>> a, b = squlil.get('select ra,dec from rc3 where name=?',"NGC 3166")
     '''
