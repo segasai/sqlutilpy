@@ -177,21 +177,30 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
           The connection object to the DB (optional) to avoid reconnecting
     asDict : boolean 
           Flag whether to retrieve the results as a dictionary with column names as keys
-    strLength : all the strings will be truncated to this length
-    intNullVal : all the integer columns with nulls will have null replaced by
+    strLength : integer
+         The maximum length of the string. 
+        Strings will be truncated to this length
+    intNullVal : integer, optional
+          All the integer columns with nulls will have null replaced by
                              this value
-    db : string with the name of the database
-    driver : the sql driver to be used (psycopg2 and sqlite3 are supported)
-    user : user name for the DB connection
-    password : DB connection password
-    host : hostname of the database
-    port : port of the database 
-    preamb: bit of SQL code to be executed before the query
-
+    db : string
+        The name of the database
+    driver : string, optional
+         The sql driver to be used (psycopg2 or sqlite3)
+    user : string, optional
+          user name for the DB connection
+    password : string, optional
+         DB connection password
+    host : string, optional
+         Hostname of the database
+    port : integer, optional
+         Port of the database 
+    preamb: string
+           SQL code to be executed before the query
+    
     Example:
     >>> a, b, c = sqlutil.get('select ra,dec,d25 from rc3')
     You can also use the parameters in your query:
-
     Example:
     >>> a, b = squlil.get('select ra,dec from rc3 where name=?',"NGC 3166")
     '''
