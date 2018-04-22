@@ -198,10 +198,12 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
     preamb: string
            SQL code to be executed before the query
     
-    Example:
+    Examples
+    --------
     >>> a, b, c = sqlutil.get('select ra,dec,d25 from rc3')
+    
     You can also use the parameters in your query:
-    Example:
+    
     >>> a, b = squlil.get('select ra,dec from rc3 where name=?',"NGC 3166")
     '''
     __pgTypeHash = {
@@ -417,7 +419,17 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
            analyze=False, createTable=True):
     """ Upload the data stored in the tuple of arrays in the DB
 
-    Example:
+    Parameters
+    ----------
+    tableName : string
+        The name of the table where the data will be uploaded
+    arrays : tuple
+        Tuple of arrays thar will be columns of the new table
+    names : tuple
+        Tuple of strings with column names
+    
+    Examples
+    --------
     >>> x = np.arange(10)
     >>> y = x**.5
     >>> sqlutil.upload('mytable',(x,y),('xcol','ycol'))
@@ -477,7 +489,8 @@ def local_join(query, tableName, arrays, names, db="wsdb", driver="psycopg2", us
     arrays : The tuple with list of arrays with the data to be loaded in the DB
     names : The tuple with the column names for the user table
 
-    Example: 
+    Examples
+    --------
     >>> x = np.arange(10)
     >>> y = x**.5
     >>> sqlutil.local_join('select * from mytable as m, sometable as s where s.id=m.xcol', 
