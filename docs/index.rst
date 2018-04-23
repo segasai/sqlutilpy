@@ -10,7 +10,7 @@ Welcome to sqlutilpy's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. automodule:: sqlutilpy
+.. automodule:: sqlutilpy.sqlutil
     :members:
     :undoc-members:
     :show-inheritance:
