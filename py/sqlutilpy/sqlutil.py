@@ -36,7 +36,7 @@ from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
 def __wait_select_inter(conn):
     """ Make the queries interruptable by Ctrl-C
-    
+
     Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/"""
     while True:
         try:
@@ -61,7 +61,33 @@ psycopg2.extensions.set_wait_callback(__wait_select_inter)
 
 def getConnection(db=None, driver=None, user=None,
                   password=None, host=None, port=5432, timeout=None):
-    """ Retrieve the connection to the DB object """
+    """ Retrieve the connection to the DB object
+
+    Parameters
+    ----------
+
+    db : string
+        The name of the database (in case of Postgresql) or filename in
+        case of sqlite db
+    driver :  string
+        The db driver (either 'psycopg2' or 'sqlite3')
+    user : string, optional
+        Username
+    password: string, optional
+        Password
+    host : string, optional
+        Host-name
+    port : integer
+        Connection port (by default 5432 for PostgreSQL)
+    timeout : integer
+        Connection timeout for sqlite
+
+    Returns
+    -------
+    conn : object
+         Database Connection
+
+    """
     if driver == 'psycopg2':
         conn_str = "dbname=%s host=%s port=%d" % (db, host, port)
         if user is not None:
@@ -169,16 +195,16 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
     Parameters
     ----------
     query : string
-         Query you want to execute, can include question 
+         Query you want to execute, can include question
           marks to refer to query parameters
-    params : tuple 
+    params : tuple
          Query parameters
     conn : object
           The connection object to the DB (optional) to avoid reconnecting
-    asDict : boolean 
+    asDict : boolean
           Flag whether to retrieve the results as a dictionary with column names as keys
     strLength : integer
-         The maximum length of the string. 
+         The maximum length of the string.
         Strings will be truncated to this length
     intNullVal : integer, optional
           All the integer columns with nulls will have null replaced by
@@ -194,16 +220,23 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
     host : string, optional
          Hostname of the database
     port : integer, optional
-         Port of the database 
-    preamb: string
+         Port of the database
+    preamb : string
            SQL code to be executed before the query
-    
+
+    Returns
+    -------
+    ret : Tuple or dictionary
+        By default you get a tuple with numpy arrays for each column in your query.
+        If you specified asDict keyword then you get an ordered dictionary with
+        your columns.
+
     Examples
     --------
     >>> a, b, c = sqlutil.get('select ra,dec,d25 from rc3')
-    
+
     You can also use the parameters in your query:
-    
+
     >>> a, b = squlil.get('select ra,dec from rc3 where name=?',"NGC 3166")
     '''
     __pgTypeHash = {
@@ -346,11 +379,35 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
     return res
 
 
-def execute(query, params=None, db="wsdb", driver="psycopg2", user=None,
-            password=None, host='locahost',
+def execute(query, params=None, db='wsdb', driver="psycopg2", user=None,
+            password=None, host='localhost',
             conn=None, preamb=None, timeout=None,
             noCommit=False):
-    """Execute a given SQL command without returning the results"""
+    """Execute a given SQL command without returning the results
+
+    Parameters
+    ----------
+
+    query: string
+        The query or command you are executing
+    params: tuple, optional
+        Optional parameters of your query
+    db : string
+        Database name
+    driver : string
+        Driver for the DB connection ('psucopg2' or 'sqlite3')
+    user : string, optional
+          user name for the DB connection
+    password : string, optional
+         DB connection password
+    host : string, optional
+         Hostname of the database
+    port : integer, optional
+         Port of the database
+    noCommit: bool
+         By default execute() will commit your command. If you say noCommit, the
+         commit won't be issued.
+    """
     connSupplied = (conn is not None)
     if not connSupplied:
         conn = getConnection(db=db, driver=driver, user=user, password=password,
@@ -427,7 +484,7 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
         Tuple of arrays thar will be columns of the new table
     names : tuple
         Tuple of strings with column names
-    
+
     Examples
     --------
     >>> x = np.arange(10)
@@ -479,12 +536,12 @@ def local_join(query, tableName, arrays, names, db="wsdb", driver="psycopg2", us
                conn=None, preamb=None, timeout=None,
                strLength=20, asDict=False):
     """ Join the data from python with the data in the database
-    This command first uploads the data in the DB and then runs a 
+    This command first uploads the data in the DB and then runs a
     user specified query.
 
     Parameters
     ----------
-    query : String with the query to be executed 
+    query : String with the query to be executed
     tableName : The name of the temporary table that is going to be created
     arrays : The tuple with list of arrays with the data to be loaded in the DB
     names : The tuple with the column names for the user table
@@ -493,7 +550,7 @@ def local_join(query, tableName, arrays, names, db="wsdb", driver="psycopg2", us
     --------
     >>> x = np.arange(10)
     >>> y = x**.5
-    >>> sqlutil.local_join('select * from mytable as m, sometable as s where s.id=m.xcol', 
+    >>> sqlutil.local_join('select * from mytable as m, sometable as s where s.id=m.xcol',
                                                                                                     'mytable',(x,y),('xcol','ycol'))
     """
 
