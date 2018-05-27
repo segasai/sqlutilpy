@@ -60,6 +60,16 @@ textcol)
         self.assertTrue((e==np.array([5,15])).all())
         self.assertTrue((f==np.array(['tester1','tester2'])).all())
 
+
+
+    def test_Null(self):
+        a,b = sqlutil.get('values ( 1, 2.) , ( NULL, NULL) ',**self.kw)
+        self.assertTrue(np.isnan(b[1])
+        self.assertTrue(a[1]=-9999)
+        a,b = sqlutil.get('values (NULL,NULL), ( 1, 2.)',**self.kw)
+        self.assertTrue(np.isnan(b[0])
+        self.assertTrue(a[0]=-9999)
+
 def test_get_dict():
     R0 = sqlutil.get('select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol',asDict=True,**self.kw)
     Rd = sqlutil.get('select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol',asDict=True,**self.kw)
