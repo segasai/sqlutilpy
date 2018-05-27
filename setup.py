@@ -29,7 +29,7 @@ def get_revision():
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 #VERSION = VERSIONPIP+'dev'+get_revision()
 
 setup(
@@ -37,10 +37,10 @@ setup(
     version = VERSION,
     author = "Sergey Koposov",
     author_email = "skoposov@cmu.edu",
-    description = ("Database query code"),
+    description = ("Database query code returning numpy arrays"),
     license = "BSD",
-    keywords = "example documentation tutorial",
-    url = "http://github.com/segasai/rvspecfit",
+    keywords = "numpy postgresql query sql sqlite array",
+    url = "https://github.com/segasai/sqlutilpy",
     packages=['sqlutilpy'],
     #scripts = [fname for fname in glob.glob(os.path.join('bin', '*'))],
     package_dir={'':'py/'},
