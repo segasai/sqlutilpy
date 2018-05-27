@@ -73,11 +73,12 @@ textcol)
         self.assertTrue(a[0] == -9999)
 
     def test_get_dict(self):
+        cols = 'sicol,intcol,bigicol,realcol,dpcol,textcol'
         R0 = sqlutil.get(
-            'select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol', asDict=True, **self.kw)
+            'select %s from sqlutil_test order by sicol'%(cols,), **self.kw)
         Rd = sqlutil.get(
-            'select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol', asDict=True, **self.kw)
-        for i, k in enumerate('sicol,intcol,bigicol,realcol,dpcol,textcol'.split(',')):
+            'select %s from sqlutil_test order by sicol'%(cols,), asDict=True, **self.kw)
+        for i, k in enumerate(cols.split(',')):
             self.assertTrue((Rd[k] == R0[i]).all())
 
     def test_upload(self):
