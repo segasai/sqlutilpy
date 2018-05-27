@@ -72,6 +72,13 @@ textcol)
         self.assertTrue(np.isnan(b[0]))
         self.assertTrue(a[0] == -9999)
 
+    def test_Array(self):
+        a, b = sqlutil.get('values ( ARRAY[1,2], 2.) , ( ARRAY[3,4], 3.) ', **self.kw)
+        self.assertTrue(a[0][0]==1)
+        self.assertTrue(a[0][1]==2)
+        self.assertTrue(a[1][0]==3)
+        self.assertTrue(a[1][1]==4)
+        
     def test_get_dict(self):
         cols = 'sicol,intcol,bigicol,realcol,dpcol,textcol'
         R0 = sqlutil.get(
