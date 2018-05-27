@@ -132,7 +132,6 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
     nfields = len(recList[0])
     shape = None
     descr = sb.dtype((np.core.records.record, dtype))
-
     try:
         retval = sb.array(recList, dtype=descr)
     except TypeError:  # list of lists instead of list of tuples
@@ -185,6 +184,43 @@ def __converter(qIn, qOut, endEvent, dtype, intNullVal):
         qOut.put(res)
 
 
+def getDType(row, typeCodes, strLength):
+    __pgTypeHash = {
+        16: bool,
+        18: str,
+        20: 'i8',
+        21: 'i2',
+        23: 'i4',
+        1007: 'i4',
+        25: '|U%d',
+        700: 'f4',
+        701: 'f8',
+        1042: '|U%d',  # character()
+        1043: '|U%d',  # varchar
+        1700: 'f8',	 # numeric
+        1114: '<M8[us]',  # timestamp
+        1082: '<M8[us]'	 # date
+    }
+    strTypes = [25,1042,1043]
+    
+    pgTypes=[]
+    
+    for i,(curv, curt) in enumerate(zip(row, typeCodes)):
+        if curt not in __pgTypeHash:
+            raise Exception('Unknown PG type  %d'%curt)
+        pgType =__pgTypeHash[curt]
+        if curt in strTypes:
+            pgType = pgType %(max(strLength, len(curv)))
+        if curt not in strTypes:
+            try:
+                len(curv)
+                pgType = 'O'
+            except TypeError:
+                pass
+        pgTypes.append(('a%d'%i, pgType))
+    dtype = numpy.dtype(pgTypes)
+    return dtype
+        
 def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
         password=None, host='localhost', preamb=None,
         conn=None, port=5432,
@@ -239,23 +275,6 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
 
     >>> a, b = squlil.get('select ra,dec from rc3 where name=?',"NGC 3166")
     '''
-    __pgTypeHash = {
-        16: bool,
-        18: str,
-        20: 'i8',
-        21: 'i2',
-        23: 'i4',
-        1007: 'i4',
-        25: '|U%d' % strLength,
-        700: 'f4',
-        701: 'f8',
-        1042: '|U%d' % strLength,  # character()
-        1043: '|U%d' % strLength,  # varchar
-        1700: 'f8',	 # numeric
-        1114: '<M8[us]',  # timestamp
-        1082: '<M8[us]'	 # date
-    }
-
     connSupplied = (conn is not None)
     if not connSupplied:
         conn = getConnection(db=db, driver=driver, user=user, password=password,
@@ -280,19 +299,20 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
             try:
                 while(True):
                     tups = cur.fetchmany()
+
+                    if tups == []:
+                        break
+                    
+                    qIn.put(tups)
                     if nrec == 0:
                         desc = cur.description
                         typeCodes = [_tmp.type_code for _tmp in desc]
                         colNames = [_tmp.name for _tmp in cur.description]
-                        dtype = numpy.dtype(
-                            [('a%d' % _i, __pgTypeHash[_t]) for _i, _t in enumerate(typeCodes)])
+                        dtype = getDType(tups[0], typeCodes, strLength)
                         proc = threading.Thread(target=__converter, args=(
                             qIn, qOut, endEvent, dtype, intNullVal))
                         proc.start()
 
-                    if tups == []:
-                        break
-                    qIn.put(tups)
                     nrec += 1
                     try:
                         reslist.append(qOut.get(False))
@@ -319,7 +339,8 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
                     if proc.is_alive():
                         proc.terminate()
                 raise
-            proc.join()
+            if proc is not None:
+                proc.join()
             if reslist == []:
                 nCols = len(desc)
                 res = numpy.array([],
