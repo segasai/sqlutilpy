@@ -30,7 +30,7 @@ class PostgresTest(unittest.TestCase):
         cur = conn.cursor()
         cur.execute(
             '''
-create table sqlutil_test (sicol smallint, intcol int, bigicol bigint,
+create unlogged table sqlutil_test (sicol smallint, intcol int, bigicol bigint,
         realcol real, dpcol double precision, timecol timestamp, 
 textcol varchar);
 insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
@@ -40,7 +40,7 @@ insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
 textcol)
         values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester2');
 
-create unlogged table sqlutil_big (a int, b double precisions);
+create unlogged table sqlutil_big (a int, b double precision);
 insert into sqlutil_big select generate_series,generate_series*2 from generate_series(1,10000000);
 
         ''')
@@ -50,6 +50,7 @@ insert into sqlutil_big select generate_series,generate_series*2 from generate_s
 
     def tearDown(self):
         self.conn.cursor().execute('drop table sqlutil_test;')
+        self.conn.cursor().execute('drop table sqlutil_big;')
         self.conn.commit()
 
     def test_getConn(self):
