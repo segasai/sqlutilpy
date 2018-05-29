@@ -58,8 +58,16 @@ textcol, boolcol)
         pass
 
     def test_execute(self):
-        sqlutil.execute('create temp table aa (a int) ' ,**self.kw);
-        sqlutil.execute('drop temp table aa;',**self.kw);
+        sqlutil.execute('create table aa (a int) ' ,**self.kw);
+        sqlutil.execute('drop table aa;',**self.kw);
+
+    def test_nocommit(self):
+        sqlutil.execute('create table aa (a int)' ,**self.kw)
+        sqlutil.execute('insert into aa values(1)' ,**self.kw)
+        sqlutil.execute('insert into aa values(2)' ,noCommit=True, **self.kw)
+        cnt,=sqlutil.get('select count(*) from aa', **self.kw)
+        assert(cnt[0]==1)
+        sqlutil.execute('drop table aa;', **self.kw)
     
     def test_local_join(self):
         R,=sqlutil.local_join('''
