@@ -58,8 +58,9 @@ textcol, boolcol)
         pass
 
     def test_execute(self):
-        sqlutil.execute('create temp table (a int) ' ,**self.kw);
-
+        sqlutil.execute('create temp table aa (a int) ' ,**self.kw);
+        sqlutil.execute('drop table aa;',**self.kw);
+    
     def test_local_join(self):
         R,=sqlutil.local_join('''
         select s.sicol from sqlutil_test as s,  mytab as m 
