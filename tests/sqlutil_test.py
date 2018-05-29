@@ -59,7 +59,7 @@ textcol, boolcol)
 
     def test_execute(self):
         sqlutil.execute('create temp table aa (a int) ' ,**self.kw);
-        sqlutil.execute('drop table aa;',**self.kw);
+        sqlutil.execute('drop temp table aa;',**self.kw);
     
     def test_local_join(self):
         R,=sqlutil.local_join('''
