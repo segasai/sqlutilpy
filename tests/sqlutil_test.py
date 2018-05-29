@@ -3,6 +3,7 @@ import os
 import psycopg2
 import numpy as np
 import sqlutilpy as sqlutil
+import sqlite3
 PG_DB = os.environ['SQLUTIL_TEST_PG_DB']
 PG_HOST = os.environ['SQLUTIL_TEST_PG_HOST']
 PG_USER = os.environ['SQLUTIL_TEST_PG_USER']
@@ -20,7 +21,7 @@ def getrand(N, float=False):
         return arr*1./m
     else:
         return arr
-
+ 
 
 class PostgresTest(unittest.TestCase):
     def setUp(self):
@@ -117,6 +118,20 @@ insert into sqlutil_big select generate_series,generate_series*2 from generate_s
         self.assertTrue((xi == yi).all())
         sqlutil.execute('drop table %s' % mytab, **self.kw)
 
+class SQLiteTest(unittest.TestCase):
+    def setUp(self):
+        self.fname='sql.db'
+        self.kw=dict(db=self.fname, driver='sqlite3')
+        conn = sqlite3.dbapi2.Connection(self.fname)	
+        cur = conn.cursor()
+        cur.execute('create table tmp (a int, b double precision)')
+        cur.execute('insert into tmp values(1,2), (2,3), (3,4), (4,5);')
+        conn.commit()
+
+    def testSimple(self):
+        a,b=sqlutil.get('select a,b from tmp', **self.kw)
+        self.assertTrue(len(a)==4)
+        
 
 if __name__ == '__main__':
     unittest.main()
