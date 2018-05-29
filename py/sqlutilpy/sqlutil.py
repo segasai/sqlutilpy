@@ -546,7 +546,8 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
         conn.close()  # do not close if we were given the connection
 
 
-def local_join(query, tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
+def local_join(query, tableName, arrays, names, db=None, 
+               driver="psycopg2", user=None,
                password=None, host='locahost',
                port=5432,
                conn=None, preamb=None, timeout=None,
