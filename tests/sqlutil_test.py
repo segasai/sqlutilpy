@@ -63,7 +63,7 @@ textcol, boolcol)
     def test_local_join(self):
         R,=sqlutil.local_join('''
         select s.sicol from sqlutil_test as s,  mytab as m 
-        where s.sicol = my.id''',
+        where s.sicol = m.id''',
                     'mytab', [np.arange(10)], ['id'], **self.kw)
         self.assertTrue(len(R)==1)
 
