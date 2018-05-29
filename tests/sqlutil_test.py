@@ -33,14 +33,14 @@ class PostgresTest(unittest.TestCase):
             '''
 create unlogged table sqlutil_test (sicol smallint, intcol int, bigicol bigint,
         realcol real, dpcol double precision, timecol timestamp, 
-textcol varchar);
+textcol varchar, boolcol bool);
 insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
-textcol)
-        values( 1,2,3,4.,5.,'2018-01-01 10:00:00','tester1');
+textcol, boolcol)
+        values( 1,2,3,4.,5.,'2018-01-01 10:00:00','tester1', true);
 insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
-textcol)
-        values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester2');
-
+textcol, boolcol)
+        values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester2', false);
+        
 create unlogged table sqlutil_big (a int, b double precision);
 insert into sqlutil_big select generate_series,generate_series*2 from generate_series(1,10000000);
 
@@ -75,14 +75,15 @@ insert into sqlutil_big select generate_series,generate_series*2 from generate_s
         self.assertTrue(a[1] == 'abcdef')
 
     def test_get(self):
-        a, b, c, d, e, f = sqlutil.get(
-            'select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol', **self.kw)
+        a, b, c, d, e, f, g = sqlutil.get(
+            'select sicol,intcol,bigicol,realcol,dpcol,textcol,boolcol from sqlutil_test order by sicol', **self.kw)
         self.assertTrue((a == np.array([1, 11])).all())
         self.assertTrue((b == np.array([2, 12])).all())
         self.assertTrue((c == np.array([3, 13])).all())
         self.assertTrue((d == np.array([4, 14])).all())
         self.assertTrue((e == np.array([5, 15])).all())
         self.assertTrue((f == np.array(['tester1', 'tester2'])).all())
+        self.assertTrue((g == np.array([True, False])).all())        
 
     def test_Null(self):
         a, b = sqlutil.get('values ( 1, 2.) , ( NULL, NULL) ', **self.kw)
