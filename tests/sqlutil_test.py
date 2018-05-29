@@ -49,7 +49,6 @@ textcol, boolcol)
 
     def tearDown(self):
         self.conn.cursor().execute('drop table sqlutil_test;')
-        self.conn.cursor().execute('drop table sqlutil_big;')
         self.conn.commit()
 
     def test_getConn(self):
@@ -74,7 +73,8 @@ textcol, boolcol)
         insert into sqlutil_big select generate_series,generate_series*2 from generate_series(1,10000000);
         ''',**self.kw)
 
-        a, b = sqlutil.get('select a,b from sqlutil_big', **self.kw)
+        a, b = sqlutil.get('select a,b from sqlutil_big;', **self.kw)
+        sqlutil.execute('drop table sqlutil_big;',**self.kw)
         self.assertTrue(len(a) == 10000000)
 
     def test_NoResults(self):
