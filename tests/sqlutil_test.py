@@ -21,7 +21,7 @@ def getrand(N, float=False):
         return arr*1./m
     else:
         return arr
- 
+
 
 class PostgresTest(unittest.TestCase):
     def setUp(self):
@@ -61,19 +61,19 @@ insert into sqlutil_big select generate_series,generate_series*2 from generate_s
         pass
 
     def test_big(self):
-        a,b=sqlutil.get('select a,b from sqlutil_big', **self.kw)
-        self.assertTrue(len(a)==10000000)
+        a, b = sqlutil.get('select a,b from sqlutil_big', **self.kw)
+        self.assertTrue(len(a) == 10000000)
 
     def test_NoResults(self):
         a, b = sqlutil.get(
             'select 1, 2 where 2<1', **self.kw)
-        self.assertTrue(len(a)==0)
-    
+        self.assertTrue(len(a) == 0)
+
     def test_StringFirstNull(self):
-        a, = sqlutil.get (''' values(NULL), ('abcdef')''', **self.kw)    
-        self.assertTrue(len(a)==2)
-        self.assertTrue(a[1]=='abcdef')
-        
+        a, = sqlutil.get(''' values(NULL), ('abcdef')''', **self.kw)
+        self.assertTrue(len(a) == 2)
+        self.assertTrue(a[1] == 'abcdef')
+
     def test_get(self):
         a, b, c, d, e, f = sqlutil.get(
             'select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol', **self.kw)
@@ -93,18 +93,19 @@ insert into sqlutil_big select generate_series,generate_series*2 from generate_s
         self.assertTrue(a[0] == -9999)
 
     def test_Array(self):
-        a, b = sqlutil.get('values ( ARRAY[1,2], 2.) , ( ARRAY[3,4], 3.) ', **self.kw)
-        self.assertTrue(a[0][0]==1)
-        self.assertTrue(a[0][1]==2)
-        self.assertTrue(a[1][0]==3)
-        self.assertTrue(a[1][1]==4)
-        
+        a, b = sqlutil.get(
+            'values ( ARRAY[1,2], 2.) , ( ARRAY[3,4], 3.) ', **self.kw)
+        self.assertTrue(a[0][0] == 1)
+        self.assertTrue(a[0][1] == 2)
+        self.assertTrue(a[1][0] == 3)
+        self.assertTrue(a[1][1] == 4)
+
     def test_get_dict(self):
         cols = 'sicol,intcol,bigicol,realcol,dpcol,textcol'
         R0 = sqlutil.get(
-            'select %s from sqlutil_test order by sicol'%(cols,), **self.kw)
+            'select %s from sqlutil_test order by sicol' % (cols,), **self.kw)
         Rd = sqlutil.get(
-            'select %s from sqlutil_test order by sicol'%(cols,), asDict=True, **self.kw)
+            'select %s from sqlutil_test order by sicol' % (cols,), asDict=True, **self.kw)
         for i, k in enumerate(cols.split(',')):
             self.assertTrue((Rd[k] == R0[i]).all())
 
@@ -118,20 +119,21 @@ insert into sqlutil_big select generate_series,generate_series*2 from generate_s
         self.assertTrue((xi == yi).all())
         sqlutil.execute('drop table %s' % mytab, **self.kw)
 
+
 class SQLiteTest(unittest.TestCase):
     def setUp(self):
-        self.fname='sql.db'
-        self.kw=dict(db=self.fname, driver='sqlite3')
-        conn = sqlite3.dbapi2.Connection(self.fname)	
+        self.fname = 'sql.db'
+        self.kw = dict(db=self.fname, driver='sqlite3')
+        conn = sqlite3.dbapi2.Connection(self.fname)
         cur = conn.cursor()
         cur.execute('create table tmp (a int, b double precision)')
         cur.execute('insert into tmp values(1,2), (2,3), (3,4), (4,5);')
         conn.commit()
 
     def testSimple(self):
-        a,b=sqlutil.get('select a,b from tmp', **self.kw)
-        self.assertTrue(len(a)==4)
-        
+        a, b = sqlutil.get('select a,b from tmp', **self.kw)
+        self.assertTrue(len(a) == 4)
+
 
 if __name__ == '__main__':
     unittest.main()

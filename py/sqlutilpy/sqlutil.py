@@ -201,30 +201,31 @@ def getDType(row, typeCodes, strLength):
         1114: '<M8[us]',  # timestamp
         1082: '<M8[us]'	 # date
     }
-    strTypes = [25,1042,1043]
-    
-    pgTypes=[]
-    
-    for i,(curv, curt) in enumerate(zip(row, typeCodes)):
+    strTypes = [25, 1042, 1043]
+
+    pgTypes = []
+
+    for i, (curv, curt) in enumerate(zip(row, typeCodes)):
         if curt not in __pgTypeHash:
-            raise Exception('Unknown PG type  %d'%curt)
-        pgType =__pgTypeHash[curt]
+            raise Exception('Unknown PG type  %d' % curt)
+        pgType = __pgTypeHash[curt]
         if curt in strTypes:
             if curv is not None:
                 curmax = max(strLength, len(curv))
             else:
                 curmax = strLength
-            pgType = pgType %(curmax,)
+            pgType = pgType % (curmax,)
         if curt not in strTypes:
             try:
                 len(curv)
                 pgType = 'O'
             except TypeError:
                 pass
-        pgTypes.append(('a%d'%i, pgType))
+        pgTypes.append(('a%d' % i, pgType))
     dtype = numpy.dtype(pgTypes)
     return dtype
-        
+
+
 def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
         password=None, host='localhost', preamb=None,
         conn=None, port=5432,
@@ -307,7 +308,7 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
 
                     if tups == []:
                         break
-                    
+
                     qIn.put(tups)
                     if nrec == 0:
                         typeCodes = [_tmp.type_code for _tmp in desc]
