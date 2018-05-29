@@ -59,7 +59,11 @@ textcol)
             'select 1, 2 where 2<1', **self.kw)
         self.assertTrue(len(a)==0)
     
-
+    def test_StringFirstNull(self):
+        a, = sqlutil.get (''' values(NULL), ('abcdef')''', **self.kw)    
+        self.assertTrue(len(a)==2)
+        self.assertTrue(a[1]=='abcdef')
+        
     def test_get(self):
         a, b, c, d, e, f = sqlutil.get(
             'select sicol,intcol,bigicol,realcol,dpcol,textcol from sqlutil_test order by sicol', **self.kw)

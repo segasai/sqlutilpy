@@ -210,7 +210,11 @@ def getDType(row, typeCodes, strLength):
             raise Exception('Unknown PG type  %d'%curt)
         pgType =__pgTypeHash[curt]
         if curt in strTypes:
-            pgType = pgType %(max(strLength, len(curv)))
+            if curv is not None:
+                curmax = max(strLength, len(curv))
+            else:
+                curmax = strLength
+            pgType = pgType %(curmax,)
         if curt not in strTypes:
             try:
                 len(curv)
