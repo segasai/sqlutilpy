@@ -39,6 +39,10 @@ textcol)
 insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
 textcol)
         values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester2');
+
+create unlogged table sqlutil_big (a int, b double precisions);
+insert into sqlutil_big select generate_series,generate_series*2 from generate_series(1,10000000);
+
         ''')
         conn.commit()
         self.conn = conn
@@ -53,6 +57,10 @@ textcol)
                                      driver='psycopg2')
         conn.close()
         pass
+
+    def test_big(self):
+        a,b=sqlutil.get('select a,b from sqlutil_big', **self.kw)
+        self.assertTrue(len(a)==10000000)
 
     def test_NoResults(self):
         a, b = sqlutil.get(
