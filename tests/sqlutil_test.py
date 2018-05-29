@@ -58,12 +58,13 @@ textcol, boolcol)
         pass
 
     def test_execute(self):
-        sqlutil.execute('create temp table (a int) ');
+        sqlutil.execute('create temp table (a int) ' ,**self.kw);
 
     def test_local_join(self):
         R,=sqlutil.local_join('''
-        select s.sicol from sqlutil_test as s,  mytab as m where where s.sicol=
-            my.id''', 'mytab', [np.arange(10)], ['id'], **self.kw)
+        select s.sicol from sqlutil_test as s,  mytab as m 
+        where s.sicol = my.id''',
+                    'mytab', [np.arange(10)], ['id'], **self.kw)
         self.assertTrue(len(R)==1)
 
 
