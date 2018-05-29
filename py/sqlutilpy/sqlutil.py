@@ -299,13 +299,13 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
             try:
                 while(True):
                     tups = cur.fetchmany()
+                    desc = cur.description
 
                     if tups == []:
                         break
                     
                     qIn.put(tups)
                     if nrec == 0:
-                        desc = cur.description
                         typeCodes = [_tmp.type_code for _tmp in desc]
                         colNames = [_tmp.name for _tmp in cur.description]
                         dtype = getDType(tups[0], typeCodes, strLength)
