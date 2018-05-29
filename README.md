@@ -10,10 +10,9 @@ The module only works for PostgreSQL and sqlite databases.
 The full documentation is available [here](http://sqlutilpy.readthedocs.io/en/latest/)
 
 ## Installation
-To install just clone the repo or down load the zip file and pip install. 
+To install the package you just need to do pip install. 
 
 ```
-git clone https://github.com/segasai/sqlutilpy.git
 pip install sqlutilpy
 ```
 
