@@ -41,8 +41,6 @@ insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
 textcol, boolcol)
         values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester2', false);
         
-create unlogged table sqlutil_big (a int, b double precision);
-insert into sqlutil_big select generate_series,generate_series*2 from generate_series(1,10000000);
 
         ''')
         conn.commit()
@@ -71,6 +69,11 @@ insert into sqlutil_big select generate_series,generate_series*2 from generate_s
 
 
     def test_big(self):
+        sqlutil.execute(
+        '''create unlogged table sqlutil_big (a int, b double precision);
+        insert into sqlutil_big select generate_series,generate_series*2 from generate_series(1,10000000);
+        ''',**self.kw)
+
         a, b = sqlutil.get('select a,b from sqlutil_big', **self.kw)
         self.assertTrue(len(a) == 10000000)
 
