@@ -357,19 +357,9 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
         elif driver == 'sqlite3':
             tups = cur.fetchall()
             if len(tups) > 0:
-                _cast = {types.BooleanType: numpy.bool,
-                         types.IntType: numpy.int32,
-                         types.LongType: numpy.int64,
-                         types.FloatType: numpy.float64,
-                         types.StringType: numpy.str,
-                         types.UnicodeType: numpy.str}
-                try:
-                    typelist = [_cast[type(tmp)] for tmp in tups[0]]
-                except KeyError:
-                    raise Exception("Unknown datatype")
                 res = numpy.core.records.array(tups)
             else:
-                return None
+                return []*len(cur.description)
 
         res = [res[tmp] for tmp in res.dtype.names]
 
