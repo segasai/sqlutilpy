@@ -60,6 +60,16 @@ insert into sqlutil_big select generate_series,generate_series*2 from generate_s
         conn.close()
         pass
 
+    def test_execute(self):
+        sqlutil.execute('create temp table (a int) ');
+
+    def test_local_join(self):
+        R,=sqlutil.local_join('''
+        select s.sicol from sqlutil_test as s,  mytab as m where where s.sicol=
+            my.id''', [np.arange(10)], ['id'], **self.kw)
+        self.assertTrue(len(R)==1)
+
+
     def test_big(self):
         a, b = sqlutil.get('select a,b from sqlutil_big', **self.kw)
         self.assertTrue(len(a) == 10000000)
