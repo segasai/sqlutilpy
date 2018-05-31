@@ -184,8 +184,8 @@ def __converter(qIn, qOut, endEvent, dtype, intNullVal):
         qOut.put(res)
 
 
-def getDType(row, typeCodes, strLength):
-    __pgTypeHash = {
+def __getDType(row, typeCodes, strLength):
+    pgTypeHash = {
         16: bool,
         18: str,
         20: 'i8',
@@ -206,9 +206,9 @@ def getDType(row, typeCodes, strLength):
     pgTypes = []
 
     for i, (curv, curt) in enumerate(zip(row, typeCodes)):
-        if curt not in __pgTypeHash:
+        if curt not in pgTypeHash:
             raise Exception('Unknown PG type  %d' % curt)
-        pgType = __pgTypeHash[curt]
+        pgType = pgTypeHash[curt]
         if curt in strTypes:
             if curv is not None:
                 curmax = max(strLength, len(curv))
@@ -313,7 +313,7 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
                     if nrec == 0:
                         typeCodes = [_tmp.type_code for _tmp in desc]
                         colNames = [_tmp.name for _tmp in cur.description]
-                        dtype = getDType(tups[0], typeCodes, strLength)
+                        dtype = __getDType(tups[0], typeCodes, strLength)
                         proc = threading.Thread(target=__converter, args=(
                             qIn, qOut, endEvent, dtype, intNullVal))
                         proc.start()
