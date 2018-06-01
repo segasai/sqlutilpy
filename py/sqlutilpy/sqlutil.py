@@ -477,6 +477,7 @@ def __print_arrays(arrays, f):
     hash = dict([
         (np.int32, '%d'),
         (np.int64, '%d'),
+        (np.int16, '%d'),
         (np.float32, '%.18e'),
         (np.float64, '%.18e'),
         (np.string_, '%s')
