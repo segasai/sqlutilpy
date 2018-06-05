@@ -126,8 +126,8 @@ textcol, boolcol)
 
     def test_Array2(self):
         a, b,c = sqlutil.get(
-            'values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],ARRAY[21::double precision,22::double precision]) ,
-            ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],ARRAY[23::double precision, 24::double precision]) ', **self.kw)
+            '''values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],ARRAY[21::double precision,22::double precision]) ,
+            ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],ARRAY[23::double precision, 24::double precision]) ''', **self.kw)
         self.assertTrue(a[0][0] == 1)
         self.assertTrue(b[0][0] == 11)
         self.assertTrue(c[0][0] == 21)
