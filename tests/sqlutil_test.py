@@ -125,12 +125,14 @@ textcol, boolcol)
         self.assertTrue(a[1][1] == 4)
 
     def test_Array2(self):
-        a, b,c = sqlutil.get(
-            'values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],ARRAY[21::double precision,22::double precision]) ,
-            ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],ARRAY[23::double precision, 24::double precision]) ', **self.kw)
+        a, b,c,d,e = sqlutil.get(
+            '''values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],ARRAY[21::double precision,22::double precision], ARRAY[31::smallint,32::smallint], ARRAY[41::bigint, 42::bigint]) ,
+            ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],ARRAY[23::double precision, 24::double precision], ARRAY[33::smallint, 34::smallint], ARRAY[43::bigint, 44::bigint]) ''', **self.kw)
         self.assertTrue(a[0][0] == 1)
         self.assertTrue(b[0][0] == 11)
         self.assertTrue(c[0][0] == 21)
+        self.assertTrue(d[0][0] == 31)
+        self.assertTrue(e[0][0] == 41)
 
     def test_get_dict(self):
         cols = 'sicol,intcol,bigicol,realcol,dpcol,textcol'
