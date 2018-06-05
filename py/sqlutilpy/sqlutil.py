@@ -195,6 +195,10 @@ def __getDType(row, typeCodes, strLength):
         25: '|U%d',
         700: 'f4',
         701: 'f8',
+        1005: 'i2',
+        1007: 'i4',
+        1016: 'i8',
+        1021: 'f4',
         1022: 'f8',
         1042: '|U%d',  # character()
         1043: '|U%d',  # varchar
