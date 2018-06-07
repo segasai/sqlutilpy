@@ -145,21 +145,22 @@ textcol, boolcol)
 
     def test_upload(self):
         mytab = 'sqlutil_test_tab'
-        xi2 = np.arange(10,dtype=np.int2)
-        xi4 = np.arange(10,dtype=np.int4)
-        xi8 = np.arange(10,dtype=np.int8)
+        xi16 = np.arange(10,dtype=np.int16)
+        xi32 = np.arange(10,dtype=np.int32)
+        xi64 = np.arange(10,dtype=np.int64)
         xf = getrand(10, True)
         xf32 = xf.astype(np.float32)
         xf64 = xf.astype(np.float64)
-        sqlutil.upload(mytab, (xi2,xi4,xi8, xf32,xf64), ('xi2',
-                                                         'xi4',
-                                                         'xi8',
-                                                         'xf32',
-                                                         'xf64'), **self.kw)
+        sqlutil.upload(mytab, (xi16, xi32, xi64, xf32, xf64), 
+                       ('xi16',
+                        'xi32',
+                        'xi64',
+                        'xf32',
+                        'xf64'), **self.kw)
         yi2,yi4,yi8, yf32,yf64 = sqlutil.get('select xi2,xi4,xi8,xf32,xf64 from %s' % (mytab), **self.kw)
-        self.assertTrue((xi2 == yi2).all())
-        self.assertTrue((xi4 == yi4).all())
-        self.assertTrue((xi8 == yi8).all())
+        self.assertTrue((xi16 == yi16).all())
+        self.assertTrue((xi32 == yi32).all())
+        self.assertTrue((xi64 == yi64).all())
         self.assertTrue((xf32 == yf32).all())
         self.assertTrue((xf64 == yf64).all())
         sqlutil.execute('drop table %s' % mytab, **self.kw)
