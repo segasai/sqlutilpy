@@ -463,6 +463,7 @@ def __create_schema(tableName, arrays, names, temp=False):
         (np.int32, 'integer'),
         (np.int64, 'bigint'),
         (np.int16, 'smallint'),
+        (np.uint8, 'bigint'),
         (np.float32, 'real'),
         (np.float64, 'double precision'),
         (np.string_, 'varchar'),
@@ -478,18 +479,19 @@ def __create_schema(tableName, arrays, names, temp=False):
     return outp + '(' + ','.join(outp1) + ')'
 
 
-def __print_arrays(arrays, f):
+def __print_arrays(arrays, f, sep=' '):
     hash = dict([
         (np.int32, '%d'),
         (np.int64, '%d'),
         (np.int16, '%d'),
+        (np.uint8,'%d'),
         (np.float32, '%.18e'),
         (np.float64, '%.18e'),
         (np.string_, '%s')
     ])
     fmt = [hash[x.dtype.type] for x in arrays]
     recarr = np.rec.fromarrays(arrays)
-    np.savetxt(f, recarr, fmt=fmt)
+    np.savetxt(f, recarr, fmt=fmt,delimiter=sep)
 
 
 def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
@@ -516,6 +518,7 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
     """
     arrays = [np.asarray(_) for _ in arrays]
     connSupplied = (conn is not None)
+    sep = '|'
     if not connSupplied:
         conn = getConnection(db=db, driver=driver, user=user, password=password,
                              host=host, timeout=timeout)
@@ -525,12 +528,12 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
             query1 = __create_schema(tableName, arrays, names, temp=temp)
             cur.execute(query1)
         f = StringIO()
-        __print_arrays(arrays, f)
+        __print_arrays(arrays, f, sep=sep)
         f.seek(0)
         try:
             thread = psycopg2.extensions.get_wait_callback()
             psycopg2.extensions.set_wait_callback(None)
-            cur.copy_from(f, tableName, sep=' ', columns=names)
+            cur.copy_from(f, tableName, sep=sep, columns=names)
         finally:
             psycopg2.extensions.set_wait_callback(thread)
     except BaseException:
