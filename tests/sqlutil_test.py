@@ -157,7 +157,7 @@ textcol, boolcol)
                         'xi64',
                         'xf32',
                         'xf64'), **self.kw)
-        yi2,yi4,yi8, yf32,yf64 = sqlutil.get(
+        yi16,yi32,yi64, yf32,yf64 = sqlutil.get(
             '''select xi16,xi32,xi64,xf32,xf64 from %s''' % (mytab), **self.kw)
         self.assertTrue((xi16 == yi16).all())
         self.assertTrue((xi32 == yi32).all())
