@@ -162,8 +162,8 @@ textcol, boolcol)
         self.assertTrue((xi16 == yi16).all())
         self.assertTrue((xi32 == yi32).all())
         self.assertTrue((xi64 == yi64).all())
-        self.assertTrue((xf32 == yf32).all())
-        self.assertTrue((xf64 == yf64).all())
+        self.assertTrue(np.allclose(xf32, yf32))
+        self.assertTrue(np.allclose(xf64, yf64))
         sqlutil.execute('drop table %s' % mytab, **self.kw)
 
 
