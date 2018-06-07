@@ -145,12 +145,23 @@ textcol, boolcol)
 
     def test_upload(self):
         mytab = 'sqlutil_test_tab'
-        xi = np.arange(10)
+        xi2 = np.arange(10,dtype=np.int2)
+        xi4 = np.arange(10,dtype=np.int4)
+        xi8 = np.arange(10,dtype=np.int8)
         xf = getrand(10, True)
-        sqlutil.upload(mytab, (xi, xf), ('xcol', 'ycol'), **self.kw)
-        yi, yf = sqlutil.get('select xcol,ycol from %s' % (mytab), **self.kw)
-        self.assertTrue((xi == yi).all())
-        self.assertTrue((xi == yi).all())
+        xf32 = xf.astype(np.float32)
+        xf64 = xf.astype(np.float64)
+        sqlutil.upload(mytab, (xi2,xi4,xi8, xf32,xf64), ('xi2',
+                                                         'xi4',
+                                                         'xi8',
+                                                         'xf32',
+                                                         'xf64'), **self.kw)
+        yi2,yi4,yi8, yf32,yf64 = sqlutil.get('select xi2,xi4,xi8,xf32,xf64 from %s' % (mytab), **self.kw)
+        self.assertTrue((xi2 == yi2).all())
+        self.assertTrue((xi4 == yi4).all())
+        self.assertTrue((xi8 == yi8).all())
+        self.assertTrue((xf32 == yf32).all())
+        self.assertTrue((xf64 == yf64).all())
         sqlutil.execute('drop table %s' % mytab, **self.kw)
 
 
