@@ -142,6 +142,8 @@ textcol, boolcol)
             'select %s from sqlutil_test order by sicol' % (cols,), asDict=True, **self.kw)
         for i, k in enumerate(cols.split(',')):
             self.assertTrue((Rd[k] == R0[i]).all())
+    def test_version(self):
+        VER = sqlutil.__version__
 
     def test_upload(self):
         mytab = 'sqlutil_test_tab'
