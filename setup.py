@@ -29,7 +29,13 @@ def get_revision():
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-VERSION = '0.0.5'
+
+
+exec(open('py/sqlutilpy/version.py','r').read())
+VERSION  =__version__
+VERSION1 = get_revision() 
+if VERSION1 != '':
+    VERSION = VERSION+'-git-'+VERSION1
 #VERSION = VERSIONPIP+'dev'+get_revision()
 
 setup(
