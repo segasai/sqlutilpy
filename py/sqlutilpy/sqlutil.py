@@ -488,7 +488,8 @@ def __print_arrays(arrays, f, sep=' '):
         (np.uint8,'%d'),
         (np.float32, '%.18e'),
         (np.float64, '%.18e'),
-        (np.string_, '%s')
+        (np.string_, '%s'),
+        (np.bool_,'%d')
     ])
     fmt = [hash[x.dtype.type] for x in arrays]
     recarr = np.rec.fromarrays(arrays)
