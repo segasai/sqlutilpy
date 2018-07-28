@@ -153,8 +153,8 @@ textcol, boolcol)
         xf = getrand(10, True)
         xf32 = xf.astype(np.float32)
         xf64 = xf.astype(np.float64)
-        xbools = np.arange(len(xi16))<(len(xi16)/2.)
-        sqlutil.upload(mytab, (xi16, xi32, xi64, xf32, xf64), 
+        xbool = np.arange(len(xi16))<(len(xi16)/2.)
+        sqlutil.upload(mytab, (xi16, xi32, xi64, xf32, xf64, xbool), 
                        ('xi16',
                         'xi32',
                         'xi64',
