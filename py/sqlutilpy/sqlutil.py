@@ -467,6 +467,7 @@ def __create_schema(tableName, arrays, names, temp=False):
         (np.float32, 'real'),
         (np.float64, 'double precision'),
         (np.string_, 'varchar'),
+        (np.bool_, 'boolean')
     ])
     if temp:
         temp = 'temporary'
