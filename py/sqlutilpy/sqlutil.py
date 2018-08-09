@@ -362,6 +362,7 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
 
         elif driver == 'sqlite3':
             tups = cur.fetchall()
+            colNames = [_tmp[0] for _tmp in cur.description]
             if len(tups) > 0:
                 res = numpy.core.records.array(tups)
             else:
