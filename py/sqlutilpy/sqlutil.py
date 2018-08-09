@@ -468,6 +468,7 @@ def __create_schema(tableName, arrays, names, temp=False):
         (np.float32, 'real'),
         (np.float64, 'double precision'),
         (np.string_, 'varchar'),
+        (np.bool_, 'boolean')
     ])
     if temp:
         temp = 'temporary'
@@ -488,7 +489,8 @@ def __print_arrays(arrays, f, sep=' '):
         (np.uint8,'%d'),
         (np.float32, '%.18e'),
         (np.float64, '%.18e'),
-        (np.string_, '%s')
+        (np.string_, '%s'),
+        (np.bool_,'%d')
     ])
     fmt = [hash[x.dtype.type] for x in arrays]
     recarr = np.rec.fromarrays(arrays)

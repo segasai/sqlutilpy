@@ -142,15 +142,33 @@ textcol, boolcol)
             'select %s from sqlutil_test order by sicol' % (cols,), asDict=True, **self.kw)
         for i, k in enumerate(cols.split(',')):
             self.assertTrue((Rd[k] == R0[i]).all())
+    def test_version(self):
+        VER = sqlutil.__version__
 
     def test_upload(self):
         mytab = 'sqlutil_test_tab'
-        xi = np.arange(10)
+        xi16 = np.arange(10,dtype=np.int16)
+        xi32 = np.arange(10,dtype=np.int32)
+        xi64 = np.arange(10,dtype=np.int64)
         xf = getrand(10, True)
-        sqlutil.upload(mytab, (xi, xf), ('xcol', 'ycol'), **self.kw)
-        yi, yf = sqlutil.get('select xcol,ycol from %s' % (mytab), **self.kw)
-        self.assertTrue((xi == yi).all())
-        self.assertTrue((xi == yi).all())
+        xf32 = xf.astype(np.float32)
+        xf64 = xf.astype(np.float64)
+        xbool = np.arange(len(xi16))<(len(xi16)/2.)
+        sqlutil.upload(mytab, (xi16, xi32, xi64, xf32, xf64, xbool), 
+                       ('xi16',
+                        'xi32',
+                        'xi64',
+                        'xf32',
+                        'xf64',
+                        'xbool'), **self.kw)
+        yi16,yi32,yi64, yf32,yf64,ybool = sqlutil.get(
+            '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab), **self.kw)
+        self.assertTrue((xi16 == yi16).all())
+        self.assertTrue((xi32 == yi32).all())
+        self.assertTrue((xi64 == yi64).all())
+        self.assertTrue(np.allclose(xf32, yf32))
+        self.assertTrue(np.allclose(xf64, yf64))
+        self.assertTrue((ybool==xbool).all())
         sqlutil.execute('drop table %s' % mytab, **self.kw)
 
 
