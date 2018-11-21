@@ -53,6 +53,7 @@ setup(
     package_data={'sqlutilpy':['tests/']},
     long_description=read('README.md'),
     long_description_content_type='text/markdown',
+    install_requires=open('requirements.txt').readlines(),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
