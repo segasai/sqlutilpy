@@ -468,7 +468,9 @@ def __create_schema(tableName, arrays, names, temp=False):
         (np.float32, 'real'),
         (np.float64, 'double precision'),
         (np.string_, 'varchar'),
-        (np.bool_, 'boolean')
+        (np.str_, 'varchar'),
+        (np.bool_, 'boolean'),
+        (np.datetime64, 'timestamp')
     ])
     if temp:
         temp = 'temporary'
@@ -490,6 +492,8 @@ def __print_arrays(arrays, f, sep=' '):
         (np.float32, '%.18e'),
         (np.float64, '%.18e'),
         (np.string_, '%s'),
+        (np.str_,'%s'),
+        (np.datetime64,'%s'),
         (np.bool_,'%d')
     ])
     fmt = [hash[x.dtype.type] for x in arrays]
