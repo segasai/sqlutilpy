@@ -8,6 +8,9 @@ import numpy as np
 import time
 import psycopg2
 import threading
+import select 
+_WAIT_SELECT_TIMEOUT = 10
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -44,9 +47,9 @@ def __wait_select_inter(conn):
             if state == POLL_OK:
                 break
             elif state == POLL_READ:
-                select([conn.fileno()], [], [])
+                select([conn.fileno()], [], [], _WAIT_SELECT_TIMEOUT)
             elif state == POLL_WRITE:
-                select([], [conn.fileno()], [])
+                select([], [conn.fileno()], [], _WAIT_SELECT_TIMEOUT)
             else:
                 raise conn.OperationalError(
                     "bad state from poll: %s" % state)
