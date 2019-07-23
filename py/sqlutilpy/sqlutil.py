@@ -539,7 +539,7 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
             query1 = __create_schema(tableName, arrays, names, temp=temp)
             cur.execute(query1)
         nsplit = 100000
-        N = len(arrays(0))
+        N = len(arrays[0])
         for i in range(N,nsplit):
             f = StringIO()
             __print_arrays([_[i:i+nsplit] for _ in arrays], f, sep=sep)
