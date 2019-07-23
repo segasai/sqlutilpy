@@ -538,15 +538,18 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
         if createTable:
             query1 = __create_schema(tableName, arrays, names, temp=temp)
             cur.execute(query1)
-        f = StringIO()
-        __print_arrays(arrays, f, sep=sep)
-        f.seek(0)
-        try:
-            thread = psycopg2.extensions.get_wait_callback()
-            psycopg2.extensions.set_wait_callback(None)
-            cur.copy_from(f, tableName, sep=sep, columns=names)
-        finally:
-            psycopg2.extensions.set_wait_callback(thread)
+        nsplit = 100000
+        N = len(arrays(0))
+        for i in range(N,nsplit):
+            f = StringIO()
+            __print_arrays([_[i:i+nsplit] for _ in arrays], f, sep=sep)
+            f.seek(0)
+            try:
+                thread = psycopg2.extensions.get_wait_callback()
+                psycopg2.extensions.set_wait_callback(None)
+                cur.copy_from(f, tableName, sep=sep, columns=names)
+            finally:
+                psycopg2.extensions.set_wait_callback(thread)
     except BaseException:
         try:
             conn.rollback()
