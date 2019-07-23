@@ -466,6 +466,7 @@ def __create_schema(tableName, arrays, names, temp=False):
     hash = dict([
         (np.int32, 'integer'),
         (np.int64, 'bigint'),
+        (np.uint64, 'bigint'),
         (np.int16, 'smallint'),
         (np.uint8, 'bigint'),
         (np.float32, 'real'),
