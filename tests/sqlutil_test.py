@@ -163,13 +163,15 @@ textcol, boolcol)
                         'xbool'), **self.kw)
         yi16,yi32,yi64, yf32,yf64,ybool = sqlutil.get(
             '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab), **self.kw)
-        self.assertTrue((xi16 == yi16).all())
-        self.assertTrue((xi32 == yi32).all())
-        self.assertTrue((xi64 == yi64).all())
-        self.assertTrue(np.allclose(xf32, yf32))
-        self.assertTrue(np.allclose(xf64, yf64))
-        self.assertTrue((ybool==xbool).all())
-        sqlutil.execute('drop table %s' % mytab, **self.kw)
+        try:
+            self.assertTrue((xi16 == yi16).all())
+            self.assertTrue((xi32 == yi32).all())
+            self.assertTrue((xi64 == yi64).all())
+            self.assertTrue(np.allclose(xf32, yf32))
+            self.assertTrue(np.allclose(xf64, yf64))
+            self.assertTrue((ybool==xbool).all())
+        finally:
+            sqlutil.execute('drop table %s' % mytab, **self.kw)
 
 
 class SQLiteTest(unittest.TestCase):
@@ -186,6 +188,8 @@ class SQLiteTest(unittest.TestCase):
         a, b = sqlutil.get('select a,b from tmp', **self.kw)
         self.assertTrue(len(a) == 4)
 
+    def tearDown(self):
+        os.unlink(self.fname)
 
 if __name__ == '__main__':
     unittest.main()
