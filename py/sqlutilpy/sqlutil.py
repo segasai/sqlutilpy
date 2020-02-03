@@ -8,7 +8,7 @@ import numpy as np
 import time
 import psycopg2
 import threading
-import select 
+import select
 _WAIT_SELECT_TIMEOUT = 10
 
 try:
@@ -51,8 +51,7 @@ def __wait_select_inter(conn):
             elif state == POLL_WRITE:
                 select([], [conn.fileno()], [], _WAIT_SELECT_TIMEOUT)
             else:
-                raise conn.OperationalError(
-                    "bad state from poll: %s" % state)
+                raise conn.OperationalError("bad state from poll: %s" % state)
         except KeyboardInterrupt:
             conn.cancel()
             # the loop will be broken by a server error
@@ -62,8 +61,13 @@ def __wait_select_inter(conn):
 psycopg2.extensions.set_wait_callback(__wait_select_inter)
 
 
-def getConnection(db=None, driver=None, user=None,
-                  password=None, host=None, port=5432, timeout=None):
+def getConnection(db=None,
+                  driver=None,
+                  user=None,
+                  password=None,
+                  host=None,
+                  port=5432,
+                  timeout=None):
     """ Retrieve the connection to the DB object
 
     Parameters
@@ -138,7 +142,7 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
     try:
         retval = sb.array(recList, dtype=descr)
     except TypeError:  # list of lists instead of list of tuples
-        shape = (len(recList),)
+        shape = (len(recList), )
         _array = np.core.records.recarray(shape, descr)
         try:
             for k in range(_array.size):
@@ -154,7 +158,8 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
                     convs.append(lambda x: x)
             convs = tuple(convs)
 
-            def convF(x): return [convs[_](x[_]) for _ in range(ncols)]
+            def convF(x):
+                return [convs[_](x[_]) for _ in range(ncols)]
 
             for k in range(k, _array.size):
                 try:
@@ -173,7 +178,7 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
 
 def __converter(qIn, qOut, endEvent, dtype, intNullVal):
     """ Convert the input stream of tuples into numpy arrays """
-    while(not endEvent.is_set()):
+    while (not endEvent.is_set()):
         try:
             tups = qIn.get(True, 0.1)
         except queue.Empty:
@@ -205,9 +210,9 @@ def __getDType(row, typeCodes, strLength):
         1022: 'f8',
         1042: '|U%d',  # character()
         1043: '|U%d',  # varchar
-        1700: 'f8',	 # numeric
+        1700: 'f8',  # numeric
         1114: '<M8[us]',  # timestamp
-        1082: '<M8[us]'	 # date
+        1082: '<M8[us]'  # date
     }
     strTypes = [25, 1042, 1043]
 
@@ -222,7 +227,7 @@ def __getDType(row, typeCodes, strLength):
                 curmax = max(strLength, len(curv))
             else:
                 curmax = strLength
-            pgType = pgType % (curmax,)
+            pgType = pgType % (curmax, )
         if curt not in strTypes:
             try:
                 len(curv)
@@ -234,11 +239,21 @@ def __getDType(row, typeCodes, strLength):
     return dtype
 
 
-def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
-        password=None, host='localhost', preamb=None,
-        conn=None, port=5432,
-        strLength=10, timeout=None, notNamed=False,
-        asDict=False, intNullVal=-9999):
+def get(query,
+        params=None,
+        db="wsdb",
+        driver="psycopg2",
+        user=None,
+        password=None,
+        host='localhost',
+        preamb=None,
+        conn=None,
+        port=5432,
+        strLength=10,
+        timeout=None,
+        notNamed=False,
+        asDict=False,
+        intNullVal=-9999):
     '''Executes the sql query and returns the tuple or dictionary with the numpy arrays.
 
     Parameters
@@ -290,8 +305,13 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
     '''
     connSupplied = (conn is not None)
     if not connSupplied:
-        conn = getConnection(db=db, driver=driver, user=user, password=password,
-                             host=host, port=port, timeout=timeout)
+        conn = getConnection(db=db,
+                             driver=driver,
+                             user=user,
+                             password=password,
+                             host=host,
+                             port=port,
+                             timeout=timeout)
     try:
         cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=notNamed)
 
@@ -310,7 +330,7 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
         colNames = []
         if driver == 'psycopg2':
             try:
-                while(True):
+                while (True):
                     # Iterating over the cursor, retrieving batches of results
                     # and then sending them for conversion
                     tups = cur.fetchmany()
@@ -322,31 +342,32 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
 
                     # Send the new batch for conversion
                     qIn.put(tups)
-                    
-                    # If the is just the start we need to launch the 
+
+                    # If the is just the start we need to launch the
                     # thread doing the conversion
                     if nrec == 0:
                         typeCodes = [_tmp.type_code for _tmp in desc]
                         colNames = [_tmp.name for _tmp in cur.description]
                         dtype = __getDType(tups[0], typeCodes, strLength)
-                        proc = threading.Thread(target=__converter, args=(
-                            qIn, qOut, endEvent, dtype, intNullVal))
+                        proc = threading.Thread(target=__converter,
+                                                args=(qIn, qOut, endEvent,
+                                                      dtype, intNullVal))
                         proc.start()
 
                     # nrec is the number of batches in conversion currently
                     nrec += 1
-                    
-                    # Try to retrieve one processed batch without waiting 
+
+                    # Try to retrieve one processed batch without waiting
                     # on it
                     try:
                         reslist.append(qOut.get(False))
                         nrec -= 1
                     except queue.Empty:
                         pass
-                
-                # Now we are done fetching the data from the DB, we 
-                # just need to assemble the converted results 
-                while(nrec != 0):
+
+                # Now we are done fetching the data from the DB, we
+                # just need to assemble the converted results
+                while (nrec != 0):
                     try:
                         reslist.append(qOut.get(True, 0.1))
                         nrec -= 1
@@ -371,9 +392,8 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
             if reslist == []:
                 nCols = len(desc)
                 res = numpy.array([],
-                                  dtype=numpy.dtype(
-                    [('a%d' % i, 'f') for i in range(nCols)])
-                )
+                                  dtype=numpy.dtype([('a%d' % i, 'f')
+                                                     for i in range(nCols)]))
             else:
                 res = numpy.concatenate(reslist)
 
@@ -383,7 +403,7 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
             if len(tups) > 0:
                 res = numpy.core.records.array(tups)
             else:
-                return []*len(cur.description)
+                return [] * len(cur.description)
 
         res = [res[tmp] for tmp in res.dtype.names]
 
@@ -418,9 +438,16 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
     return res
 
 
-def execute(query, params=None, db='wsdb', driver="psycopg2", user=None,
-            password=None, host='localhost',
-            conn=None, preamb=None, timeout=None,
+def execute(query,
+            params=None,
+            db='wsdb',
+            driver="psycopg2",
+            user=None,
+            password=None,
+            host='localhost',
+            conn=None,
+            preamb=None,
+            timeout=None,
             noCommit=False):
     """Execute a given SQL command without returning the results
 
@@ -449,8 +476,12 @@ def execute(query, params=None, db='wsdb', driver="psycopg2", user=None,
     """
     connSupplied = (conn is not None)
     if not connSupplied:
-        conn = getConnection(db=db, driver=driver, user=user, password=password,
-                             host=host, timeout=timeout)
+        conn = getConnection(db=db,
+                             driver=driver,
+                             user=user,
+                             password=password,
+                             host=host,
+                             timeout=timeout)
     try:
         cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=True)
         if params is not None:
@@ -477,19 +508,12 @@ def execute(query, params=None, db='wsdb', driver="psycopg2", user=None,
 
 
 def __create_schema(tableName, arrays, names, temp=False):
-    hash = dict([
-        (np.int32, 'integer'),
-        (np.int64, 'bigint'),
-        (np.uint64, 'bigint'),
-        (np.int16, 'smallint'),
-        (np.uint8, 'bigint'),
-        (np.float32, 'real'),
-        (np.float64, 'double precision'),
-        (np.string_, 'varchar'),
-        (np.str_, 'varchar'),
-        (np.bool_, 'boolean'),
-        (np.datetime64, 'timestamp')
-    ])
+    hash = dict([(np.int32, 'integer'), (np.int64, 'bigint'),
+                 (np.uint64, 'bigint'), (np.int16, 'smallint'),
+                 (np.uint8, 'bigint'), (np.float32, 'real'),
+                 (np.float64, 'double precision'), (np.string_, 'varchar'),
+                 (np.str_, 'varchar'), (np.bool_, 'boolean'),
+                 (np.datetime64, 'timestamp')])
     if temp:
         temp = 'temporary'
     else:
@@ -502,28 +526,30 @@ def __create_schema(tableName, arrays, names, temp=False):
 
 
 def __print_arrays(arrays, f, sep=' '):
-    hash = dict([
-        (np.int32, '%d'),
-        (np.int64, '%d'),
-        (np.int16, '%d'),
-        (np.uint8,'%d'),
-        (np.float32, '%.18e'),
-        (np.float64, '%.18e'),
-        (np.string_, '%s'),
-        (np.str_,'%s'),
-        (np.datetime64,'%s'),
-        (np.bool_,'%d')
-    ])
+    hash = dict([(np.int32, '%d'), (np.int64, '%d'), (np.int16, '%d'),
+                 (np.uint8, '%d'), (np.float32, '%.18e'),
+                 (np.float64, '%.18e'), (np.string_, '%s'), (np.str_, '%s'),
+                 (np.datetime64, '%s'), (np.bool_, '%d')])
     fmt = [hash[x.dtype.type] for x in arrays]
     recarr = np.rec.fromarrays(arrays)
-    np.savetxt(f, recarr, fmt=fmt,delimiter=sep)
+    np.savetxt(f, recarr, fmt=fmt, delimiter=sep)
 
 
-def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
-           password=None, host='locahost',
-           conn=None, preamb=None, timeout=None,
-           noCommit=False, temp=False,
-           analyze=False, createTable=True):
+def upload(tableName,
+           arrays,
+           names,
+           db="wsdb",
+           driver="psycopg2",
+           user=None,
+           password=None,
+           host='locahost',
+           conn=None,
+           preamb=None,
+           timeout=None,
+           noCommit=False,
+           temp=False,
+           analyze=False,
+           createTable=True):
     """ Upload the data stored in the tuple of arrays in the DB
 
     Parameters
@@ -545,8 +571,12 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
     connSupplied = (conn is not None)
     sep = '|'
     if not connSupplied:
-        conn = getConnection(db=db, driver=driver, user=user, password=password,
-                             host=host, timeout=timeout)
+        conn = getConnection(db=db,
+                             driver=driver,
+                             user=user,
+                             password=password,
+                             host=host,
+                             timeout=timeout)
     try:
         cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=True)
         if createTable:
@@ -554,9 +584,9 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
             cur.execute(query1)
         nsplit = 100000
         N = len(arrays[0])
-        for i in range(0,N,nsplit):
+        for i in range(0, N, nsplit):
             f = StringIO()
-            __print_arrays([_[i:i+nsplit] for _ in arrays], f, sep=sep)
+            __print_arrays([_[i:i + nsplit] for _ in arrays], f, sep=sep)
             f.seek(0)
             try:
                 thread = psycopg2.extensions.get_wait_callback()
@@ -584,12 +614,21 @@ def upload(tableName, arrays, names, db="wsdb", driver="psycopg2", user=None,
         conn.close()  # do not close if we were given the connection
 
 
-def local_join(query, tableName, arrays, names, db=None, 
-               driver="psycopg2", user=None,
-               password=None, host='locahost',
+def local_join(query,
+               tableName,
+               arrays,
+               names,
+               db=None,
+               driver="psycopg2",
+               user=None,
+               password=None,
+               host='locahost',
                port=5432,
-               conn=None, preamb=None, timeout=None,
-               strLength=20, asDict=False):
+               conn=None,
+               preamb=None,
+               timeout=None,
+               strLength=20,
+               asDict=False):
     """ Join the data from python with the data in the database
     This command first uploads the data in the DB and then runs a
     user specified query.
@@ -611,12 +650,25 @@ def local_join(query, tableName, arrays, names, db=None,
 
     connSupplied = (conn is not None)
     if not connSupplied:
-        conn = getConnection(db=db, driver=driver, user=user, password=password,
-                             host=host, timeout=timeout, port=port)
+        conn = getConnection(db=db,
+                             driver=driver,
+                             user=user,
+                             password=password,
+                             host=host,
+                             timeout=timeout,
+                             port=port)
 
-    upload(tableName, arrays, names, conn=conn, noCommit=True, temp=True,
+    upload(tableName,
+           arrays,
+           names,
+           conn=conn,
+           noCommit=True,
+           temp=True,
            analyze=True)
-    res = get(query, conn=conn, preamb=preamb, strLength=strLength,
+    res = get(query,
+              conn=conn,
+              preamb=preamb,
+              strLength=strLength,
               asDict=asDict)
     conn.rollback()
 
