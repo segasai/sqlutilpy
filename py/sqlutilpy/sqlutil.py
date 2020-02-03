@@ -311,13 +311,20 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
         if driver == 'psycopg2':
             try:
                 while(True):
+                    # Iterating over the cursor, retrieving batches of results
+                    # and then sending them for conversion
                     tups = cur.fetchmany()
                     desc = cur.description
 
+                    # No more data
                     if tups == []:
                         break
 
+                    # Send the new batch for conversion
                     qIn.put(tups)
+                    
+                    # If the is just the start we need to launch the 
+                    # thread doing the conversion
                     if nrec == 0:
                         typeCodes = [_tmp.type_code for _tmp in desc]
                         colNames = [_tmp.name for _tmp in cur.description]
@@ -326,22 +333,29 @@ def get(query, params=None, db="wsdb", driver="psycopg2", user=None,
                             qIn, qOut, endEvent, dtype, intNullVal))
                         proc.start()
 
+                    # nrec is the number of batches in conversion currently
                     nrec += 1
+                    
+                    # Try to retrieve one processed batch without waiting 
+                    # on it
                     try:
                         reslist.append(qOut.get(False))
                         nrec -= 1
                     except queue.Empty:
                         pass
-                try:
-                    while(nrec != 0):
-                        try:
-                            reslist.append(qOut.get(True, 0.1))
-                            nrec -= 1
-                        except:
-                            if endEvent.is_set():
-                                raise Exception('Child thread failed')
-                except queue.Empty:
-                    pass
+                
+                # Now we are done fetching the data from the DB, we 
+                # just need to assemble the converted results 
+                while(nrec != 0):
+                    try:
+                        reslist.append(qOut.get(True, 0.1))
+                        nrec -= 1
+                    except queue.Empty:
+                        # continue looping unless the endEvent was set
+                        # which should happen in the case of the crash
+                        # of the converter thread
+                        if endEvent.is_set():
+                            raise Exception('Child thread failed')
                 endEvent.set()
             except BaseException:
                 endEvent.set()
