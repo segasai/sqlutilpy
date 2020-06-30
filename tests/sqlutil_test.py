@@ -24,7 +24,7 @@ def getrand(N, float=False):
         return arr
 
 
-class TestPostgres:#(unittest.TestCase):
+class TestPostgres:
     def setup(self):
         conn = psycopg2.connect('dbname=%s user=%s host=%s' % (
             PG_DB, PG_USER, PG_HOST
@@ -200,7 +200,7 @@ textcol, boolcol)
             sqlutil.execute('drop table %s' % mytab, **self.kw)
 
 
-class SQLiteTest(unittest.TestCase):
+class TestSQLite:
     def setUp(self):
         self.fname = 'sql.db'
         self.kw = dict(db=self.fname, driver='sqlite3')
@@ -216,6 +216,3 @@ class SQLiteTest(unittest.TestCase):
 
     def tearDown(self):
         os.unlink(self.fname)
-
-if __name__ == '__main__':
-    unittest.main()
