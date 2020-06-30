@@ -35,7 +35,6 @@ install:
   - pip install .
 
 script:
-  - cd tests;
   - export SQLUTIL_TEST_PG_DB='postgres'
   - export SQLUTIL_TEST_PG_HOST='localhost'
   - export SQLUTIL_TEST_PG_USER='postgres'
