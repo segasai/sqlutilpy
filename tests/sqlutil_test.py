@@ -201,7 +201,7 @@ textcol, boolcol)
 
 
 class TestSQLite:
-    def setUp(self):
+    def setup(self):
         self.fname = 'sql.db'
         self.kw = dict(db=self.fname, driver='sqlite3')
         conn = sqlite3.dbapi2.Connection(self.fname)
@@ -214,5 +214,5 @@ class TestSQLite:
         a, b = sqlutil.get('select a,b from tmp', **self.kw)
         assert(len(a) == 4)
 
-    def tearDown(self):
+    def teardown(self):
         os.unlink(self.fname)
