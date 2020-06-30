@@ -36,4 +36,7 @@ script:
   - export SQLUTIL_TEST_PG_DB='postgres'
   - export SQLUTIL_TEST_PG_HOST='localhost'
   - export SQLUTIL_TEST_PG_USER='postgres'
-  - python sqlutil_test.py 
+  - py.test --cov=sqlutilpy
+
+after_success:
+  - coveralls
