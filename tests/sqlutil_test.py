@@ -148,6 +148,21 @@ textcol, boolcol)
             'select %s from sqlutil_test order by sicol' % (cols,), asDict=True, **self.kw)
         for i, k in enumerate(cols.split(',')):
             assert((Rd[k] == R0[i]).all())
+
+    def test_get_dict_rep(self):
+        cols = 'sicol,sicol'
+        R0 = sqlutil.get(
+            'select %s from sqlutil_test order by sicol' % (cols,), asDict=True,
+            **self.kw)
+        assert(len(R0)==2)
+
+    def test_error(self):
+        cols = 'sicol,sicol'
+        with pytest.raises(Exception):
+            R0 = sqlutil.get(
+                'select 1/0 from sqlutil_test ' 
+                **self.kw)
+        
     def test_version(self):
         VER = sqlutil.__version__
 
