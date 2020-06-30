@@ -92,6 +92,12 @@ textcol, boolcol)
             'select 1, 2 where 2<1', **self.kw)
         assert(len(a) == 0)
 
+    def test_Preamb(self):
+        a, b = sqlutil.get(
+            'select 1, 2 where 2<1', preamb='set enable_seqscan to off',
+            **self.kw)
+        assert(len(a) == 0)
+
     def test_StringFirstNull(self):
         a, = sqlutil.get(''' values(NULL), ('abcdef')''', **self.kw)
         assert(len(a) == 2)

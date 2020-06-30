@@ -22,15 +22,6 @@ except:
     import Queue as queue
 import collections
 import warnings
-try:
-    dictclass = collections.OrderedDict
-except AttributeError:
-    try:
-        import ordereddict
-        dictclass = ordereddict.OrderedDict
-    except ImportError:
-        warnings.warn('No ordered dict library found')
-        dictclass = dict
 from numpy.core import numeric as sb
 from numpy.core import numerictypes as nt
 from select import select
@@ -422,7 +413,7 @@ def get(query,
     cur.close()
 
     if asDict:
-        resDict = dictclass()
+        resDict = collections.OrderedDict()
         repeats = {}
         for _n, _v in zip(colNames, res):
             if _n in resDict:
