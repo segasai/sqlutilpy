@@ -1,9 +1,10 @@
-import unittest
+import pytest
 import os
 import psycopg2
 import numpy as np
 import sqlutilpy as sqlutil
 import sqlite3
+
 PG_DB = os.environ['SQLUTIL_TEST_PG_DB']
 PG_HOST = os.environ['SQLUTIL_TEST_PG_HOST']
 PG_USER = os.environ['SQLUTIL_TEST_PG_USER']
@@ -56,6 +57,10 @@ textcol, boolcol)
                                      driver='psycopg2')
         conn.close()
         pass
+    def test_getConn(self):
+        with pytest.raises(Exception):
+            conn = sqlutil.getConnection(host=PG_HOST, user=PG_USER, db=PG_DB,
+                                     driver='psycopgXX')
 
     def test_execute(self):
         sqlutil.execute('create table aa (a int) ' ,**self.kw);
