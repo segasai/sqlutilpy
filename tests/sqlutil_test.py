@@ -109,8 +109,8 @@ textcol, boolcol)
         xid = 5
         a, b = sqlutil.get(
             '''
-        select * from (values (0,1),(10,20)) as x where column1<%;''',
-            xid, **self.kw)
+        select * from (values (0,1),(10,20)) as x where column1<%s;''',
+            (xid,),  **self.kw)
         assert(len(a) == 1)
 
     def test_Preamb(self):

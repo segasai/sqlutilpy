@@ -394,7 +394,7 @@ def get(query,
             if len(tups) > 0:
                 res = numpy.core.records.array(tups)
             else:
-                return [] * len(cur.description)
+                return [[]] * len(cur.description)
 
         res = [res[tmp] for tmp in res.dtype.names]
 
