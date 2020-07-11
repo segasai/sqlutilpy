@@ -99,11 +99,19 @@ textcol, boolcol)
         a, b = sqlutil.get('select a,b from sqlutil_big;', **self.kw)
         sqlutil.execute('drop table sqlutil_big;',**self.kw)
         assert (len(a) == 10000000)
-
+        
     def test_NoResults(self):
         a, b = sqlutil.get(
             'select 1, 2 where 2<1', **self.kw)
         assert(len(a) == 0)
+
+    def test_params(self):
+        xid = 5
+        a, b = sqlutil.get(
+            '''
+        select * from (values (0,1),(10,20)) as x where column1<%;''',
+            xid, **self.kw)
+        assert(len(a) == 1)
 
     def test_Preamb(self):
         a, b = sqlutil.get(
@@ -221,6 +229,10 @@ class TestSQLite:
     def testSimple(self):
         a, b = sqlutil.get('select a,b from tmp', **self.kw)
         assert(len(a) == 4)
+
+    def testEmpty(self):
+        a, b = sqlutil.get('select a,b from tmp where a<0', **self.kw)
+        assert(len(a) == 0)
 
     def teardown(self):
         os.unlink(self.fname)
