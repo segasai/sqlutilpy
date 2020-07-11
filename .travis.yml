@@ -27,6 +27,7 @@ before_install:
 
 before_script:
   - createuser -U postgres -s travis
+  - psql -c "create role testuser with login password 'testpassword';" postgres
 
 install:
   - pip install -r requirements.txt

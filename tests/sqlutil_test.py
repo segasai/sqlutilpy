@@ -57,6 +57,14 @@ textcol, boolcol)
                                      driver='psycopg2')
         conn.close()
         pass
+
+    def test_getConnUser(self):
+        conn = sqlutil.getConnection(host=PG_HOST, user=PG_USER, db=PG_DB,
+                                     driver='psycopg2', user='testuser',
+                                     password='testpassword')
+        conn.close()
+        pass
+
     def test_getConn(self):
         with pytest.raises(Exception):
             conn = sqlutil.getConnection(host=PG_HOST, user=PG_USER, db=PG_DB,
