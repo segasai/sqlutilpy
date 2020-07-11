@@ -186,7 +186,7 @@ textcol, boolcol)
     def test_error1(self):
         with pytest.raises(sqlutil.SqlUtilException):
             R0 = sqlutil.get(
-                '''select '1'::bytea from sqlutil_test '''
+                '''select '1'::bytea from sqlutil_test ''', 
                 **self.kw)
         
     def test_version(self):
