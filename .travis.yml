@@ -5,6 +5,7 @@ python:
   - "3.4"
   - "3.5"
   - "3.6"
+  - "3.7"
 
 before_install:
   - export PGVERSION=9.6
@@ -29,11 +30,16 @@ before_script:
 
 install:
   - pip install -r requirements.txt
+  - pip install pytest
+  - pip install pytest-cov
+  - pip install coveralls
   - pip install .
 
 script:
-  - cd tests;
   - export SQLUTIL_TEST_PG_DB='postgres'
   - export SQLUTIL_TEST_PG_HOST='localhost'
   - export SQLUTIL_TEST_PG_USER='postgres'
-  - python sqlutil_test.py 
+  - py.test --cov=sqlutilpy
+
+after_success:
+  - coveralls

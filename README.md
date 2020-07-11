@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/segasai/sqlutilpy.svg?branch=master)](https://travis-ci.org/segasai/sqlutilpy)
 [![Documentation Status](https://readthedocs.org/projects/sqlutilpy/badge/?version=latest)](http://sqlutilpy.readthedocs.io/en/latest/?badge=latest)
-
+[![Coverage Status](https://coveralls.io/repos/github/segasai/sqlutilpy/badge.svg?branch=master)](https://coveralls.io/github/segasai/sqlutilpy?branch=master)
 
 # sqlutilpy
 Python module to query SQL databases and return numpy arrays, upload

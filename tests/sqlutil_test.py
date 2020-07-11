@@ -1,9 +1,10 @@
-import unittest
+import pytest
 import os
 import psycopg2
 import numpy as np
 import sqlutilpy as sqlutil
 import sqlite3
+
 PG_DB = os.environ['SQLUTIL_TEST_PG_DB']
 PG_HOST = os.environ['SQLUTIL_TEST_PG_HOST']
 PG_USER = os.environ['SQLUTIL_TEST_PG_USER']
@@ -23,8 +24,8 @@ def getrand(N, float=False):
         return arr
 
 
-class PostgresTest(unittest.TestCase):
-    def setUp(self):
+class TestPostgres:
+    def setup(self):
         conn = psycopg2.connect('dbname=%s user=%s host=%s' % (
             PG_DB, PG_USER, PG_HOST
         ))
@@ -47,7 +48,7 @@ textcol, boolcol)
         self.conn = conn
         self.kw = {'host': PG_HOST, 'user': PG_USER, 'db': PG_DB}
 
-    def tearDown(self):
+    def teardown(self):
         self.conn.cursor().execute('drop table sqlutil_test;')
         self.conn.commit()
 
@@ -56,6 +57,10 @@ textcol, boolcol)
                                      driver='psycopg2')
         conn.close()
         pass
+    def test_getConn(self):
+        with pytest.raises(Exception):
+            conn = sqlutil.getConnection(host=PG_HOST, user=PG_USER, db=PG_DB,
+                                     driver='psycopgXX')
 
     def test_execute(self):
         sqlutil.execute('create table aa (a int) ' ,**self.kw);
@@ -74,7 +79,7 @@ textcol, boolcol)
         select s.sicol from sqlutil_test as s,  mytab as m 
         where s.sicol = m.id''',
                     'mytab', [np.arange(10)], ['id'], **self.kw)
-        self.assertTrue(len(R)==1)
+        assert(len(R)==1)
 
 
     def test_big(self):
@@ -85,54 +90,60 @@ textcol, boolcol)
 
         a, b = sqlutil.get('select a,b from sqlutil_big;', **self.kw)
         sqlutil.execute('drop table sqlutil_big;',**self.kw)
-        self.assertTrue(len(a) == 10000000)
+        assert (len(a) == 10000000)
 
     def test_NoResults(self):
         a, b = sqlutil.get(
             'select 1, 2 where 2<1', **self.kw)
-        self.assertTrue(len(a) == 0)
+        assert(len(a) == 0)
+
+    def test_Preamb(self):
+        a, b = sqlutil.get(
+            'select 1, 2 where 2<1', preamb='set enable_seqscan to off',
+            **self.kw)
+        assert(len(a) == 0)
 
     def test_StringFirstNull(self):
         a, = sqlutil.get(''' values(NULL), ('abcdef')''', **self.kw)
-        self.assertTrue(len(a) == 2)
-        self.assertTrue(a[1] == 'abcdef')
+        assert(len(a) == 2)
+        assert(a[1] == 'abcdef')
 
     def test_get(self):
         a, b, c, d, e, f, g = sqlutil.get(
             'select sicol,intcol,bigicol,realcol,dpcol,textcol,boolcol from sqlutil_test order by sicol', **self.kw)
-        self.assertTrue((a == np.array([1, 11])).all())
-        self.assertTrue((b == np.array([2, 12])).all())
-        self.assertTrue((c == np.array([3, 13])).all())
-        self.assertTrue((d == np.array([4, 14])).all())
-        self.assertTrue((e == np.array([5, 15])).all())
-        self.assertTrue((f == np.array(['tester1', 'tester2'])).all())
-        self.assertTrue((g == np.array([True, False])).all())        
+        assert((a == np.array([1, 11])).all())
+        assert((b == np.array([2, 12])).all())
+        assert((c == np.array([3, 13])).all())
+        assert((d == np.array([4, 14])).all())
+        assert((e == np.array([5, 15])).all())
+        assert((f == np.array(['tester1', 'tester2'])).all())
+        assert((g == np.array([True, False])).all())        
 
     def test_Null(self):
         a, b = sqlutil.get('values ( 1, 2.) , ( NULL, NULL) ', **self.kw)
-        self.assertTrue(np.isnan(b[1]))
-        self.assertTrue(a[1] == -9999)
+        assert(np.isnan(b[1]))
+        assert(a[1] == -9999)
         a, b = sqlutil.get('values (NULL,NULL), ( 1, 2.)', **self.kw)
-        self.assertTrue(np.isnan(b[0]))
-        self.assertTrue(a[0] == -9999)
+        assert(np.isnan(b[0]))
+        assert(a[0] == -9999)
 
     def test_Array(self):
         a, b = sqlutil.get(
             'values ( ARRAY[1,2], 2.) , ( ARRAY[3,4], 3.) ', **self.kw)
-        self.assertTrue(a[0][0] == 1)
-        self.assertTrue(a[0][1] == 2)
-        self.assertTrue(a[1][0] == 3)
-        self.assertTrue(a[1][1] == 4)
+        assert(a[0][0] == 1)
+        assert(a[0][1] == 2)
+        assert(a[1][0] == 3)
+        assert(a[1][1] == 4)
 
     def test_Array2(self):
         a, b,c,d,e = sqlutil.get(
             '''values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],ARRAY[21::double precision,22::double precision], ARRAY[31::smallint,32::smallint], ARRAY[41::bigint, 42::bigint]) ,
             ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],ARRAY[23::double precision, 24::double precision], ARRAY[33::smallint, 34::smallint], ARRAY[43::bigint, 44::bigint]) ''', **self.kw)
-        self.assertTrue(a[0][0] == 1)
-        self.assertTrue(b[0][0] == 11)
-        self.assertTrue(c[0][0] == 21)
-        self.assertTrue(d[0][0] == 31)
-        self.assertTrue(e[0][0] == 41)
+        assert(a[0][0] == 1)
+        assert(b[0][0] == 11)
+        assert(c[0][0] == 21)
+        assert(d[0][0] == 31)
+        assert(e[0][0] == 41)
 
     def test_get_dict(self):
         cols = 'sicol,intcol,bigicol,realcol,dpcol,textcol'
@@ -141,7 +152,22 @@ textcol, boolcol)
         Rd = sqlutil.get(
             'select %s from sqlutil_test order by sicol' % (cols,), asDict=True, **self.kw)
         for i, k in enumerate(cols.split(',')):
-            self.assertTrue((Rd[k] == R0[i]).all())
+            assert((Rd[k] == R0[i]).all())
+
+    def test_get_dict_rep(self):
+        cols = 'sicol,sicol'
+        R0 = sqlutil.get(
+            'select %s from sqlutil_test order by sicol' % (cols,), asDict=True,
+            **self.kw)
+        assert(len(R0)==2)
+
+    def test_error(self):
+        cols = 'sicol,sicol'
+        with pytest.raises(Exception):
+            R0 = sqlutil.get(
+                'select 1/0 from sqlutil_test ' 
+                **self.kw)
+        
     def test_version(self):
         VER = sqlutil.__version__
 
@@ -164,18 +190,18 @@ textcol, boolcol)
         yi16,yi32,yi64, yf32,yf64,ybool = sqlutil.get(
             '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab), **self.kw)
         try:
-            self.assertTrue((xi16 == yi16).all())
-            self.assertTrue((xi32 == yi32).all())
-            self.assertTrue((xi64 == yi64).all())
-            self.assertTrue(np.allclose(xf32, yf32))
-            self.assertTrue(np.allclose(xf64, yf64))
-            self.assertTrue((ybool==xbool).all())
+            assert((xi16 == yi16).all())
+            assert((xi32 == yi32).all())
+            assert((xi64 == yi64).all())
+            assert(np.allclose(xf32, yf32))
+            assert(np.allclose(xf64, yf64))
+            assert((ybool==xbool).all())
         finally:
             sqlutil.execute('drop table %s' % mytab, **self.kw)
 
 
-class SQLiteTest(unittest.TestCase):
-    def setUp(self):
+class TestSQLite:
+    def setup(self):
         self.fname = 'sql.db'
         self.kw = dict(db=self.fname, driver='sqlite3')
         conn = sqlite3.dbapi2.Connection(self.fname)
@@ -186,10 +212,7 @@ class SQLiteTest(unittest.TestCase):
 
     def testSimple(self):
         a, b = sqlutil.get('select a,b from tmp', **self.kw)
-        self.assertTrue(len(a) == 4)
+        assert(len(a) == 4)
 
-    def tearDown(self):
+    def teardown(self):
         os.unlink(self.fname)
-
-if __name__ == '__main__':
-    unittest.main()
