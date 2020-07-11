@@ -59,7 +59,7 @@ textcol, boolcol)
         pass
 
     def test_getConnUser(self):
-        conn = sqlutil.getConnection(host=PG_HOST, user=PG_USER, db=PG_DB,
+        conn = sqlutil.getConnection(host=PG_HOST, db=PG_DB,
                                      driver='psycopg2', user='testuser',
                                      password='testpassword')
         conn.close()
