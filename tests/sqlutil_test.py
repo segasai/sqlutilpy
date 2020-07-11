@@ -65,7 +65,7 @@ textcol, boolcol)
         conn.close()
         pass
 
-    def test_getConn(self):
+    def test_getConnFail(self):
         with pytest.raises(Exception):
             conn = sqlutil.getConnection(host=PG_HOST, user=PG_USER, db=PG_DB,
                                      driver='psycopgXX')
@@ -178,10 +178,15 @@ textcol, boolcol)
         assert(len(R0)==2)
 
     def test_error(self):
-        cols = 'sicol,sicol'
         with pytest.raises(Exception):
             R0 = sqlutil.get(
                 'select 1/0 from sqlutil_test ' 
+                **self.kw)
+
+    def test_error1(self):
+        with pytest.raises(sqlutil.SqlUtilException):
+            R0 = sqlutil.get(
+                '''select '1'::bytea from sqlutil_test '''
                 **self.kw)
         
     def test_version(self):

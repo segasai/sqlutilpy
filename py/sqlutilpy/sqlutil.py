@@ -27,6 +27,8 @@ from numpy.core import numerictypes as nt
 from select import select
 from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
+class SqlUtilException(Exception):
+    pass
 
 def __wait_select_inter(conn):
     """ Make the queries interruptable by Ctrl-C
@@ -211,7 +213,7 @@ def __getDType(row, typeCodes, strLength):
 
     for i, (curv, curt) in enumerate(zip(row, typeCodes)):
         if curt not in pgTypeHash:
-            raise Exception('Unknown PG type  %d' % curt)
+            raise SqlUtilException('Unknown PG type  %d' % curt)
         pgType = pgTypeHash[curt]
         if curt in strTypes:
             if curv is not None:
