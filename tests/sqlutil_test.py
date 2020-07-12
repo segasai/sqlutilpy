@@ -72,7 +72,7 @@ textcol, boolcol)
 
     def test_execute(self):
         sqlutil.execute('create table aa (a int) ' ,**self.kw);
-        sqlutil.execute('insert into aa (a) values(%s)' ,1, **self.kw);
+        sqlutil.execute('insert into aa (a) values(%s)', (1,), **self.kw);
         sqlutil.execute('drop table aa;',**self.kw);
 
     def test_execute_fail(self):
