@@ -76,7 +76,7 @@ textcol, boolcol)
         sqlutil.execute('drop table aa;',**self.kw);
 
     def test_execute_fail(self):
-        with pytest.raises(Exception)
+        with pytest.raises(Exception):
             sqlutil.execute('create xtable;' ,**self.kw);
 
     def test_nocommit(self):
