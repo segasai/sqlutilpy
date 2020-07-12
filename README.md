@@ -19,17 +19,18 @@ pip install sqlutilpy
 
 ## Querying the database and retrieving the results
 ```
-ra,dec = sqlutil.get('select ra,dec from mytable', host='HOST_NAME_OF_MY_PG_SERVER', db='THE_NAME_OF_MY_DB')
+import sqlutilpy
+ra,dec = squtilpy.get('select ra,dec from mytable', host='HOST_NAME_OF_MY_PG_SERVER', db='THE_NAME_OF_MY_DB')
 ```
 
-By default sqlutil.get executes the result and returns the tuple of 
+By default sqlutilpy.get executes the result and returns the tuple of 
 results
 
 ## Uploading your arrays as column in a table
 ```
 x = np.arange(10)                                                   
 y = x**.5                                                           
-sqlutil.upload('mytable',(x,y),('xcol','ycol'))    
+sqlutilpy.upload('mytable',(x,y),('xcol','ycol'))    
 ``` 
 This will create a table called mytable with columns xcol and ycol 
 
