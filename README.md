@@ -9,6 +9,8 @@ The module only works for PostgreSQL and sqlite databases.
 
 The full documentation is available [here](http://sqlutilpy.readthedocs.io/en/latest/)
 
+Author: Sergey Koposov (Uni of Cambridge/CMU/Uni of Edinburgh)
+
 ## Installation
 To install the package you just need to do pip install. 
 
