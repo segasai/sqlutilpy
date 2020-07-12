@@ -72,7 +72,12 @@ textcol, boolcol)
 
     def test_execute(self):
         sqlutil.execute('create table aa (a int) ' ,**self.kw);
+        sqlutil.execute('insert into aa (a) values(%s)' ,1, **self.kw);
         sqlutil.execute('drop table aa;',**self.kw);
+
+    def test_execute_fail(self):
+        with pytest.raises(Exception)
+            sqlutil.execute('create xtable;' ,**self.kw);
 
     def test_nocommit(self):
         sqlutil.execute('create table aa (a int)' ,**self.kw)
@@ -219,6 +224,16 @@ textcol, boolcol)
             assert((ybool==xbool).all())
         finally:
             sqlutil.execute('drop table %s' % mytab, **self.kw)
+
+        with pytest.raises(Exception):
+            sqlutil.upload(' a b c d'  , (xi16, xi32, xi64, xf32, xf64, xbool), 
+                       ('xi16',
+                        'xi32',
+                        'xi64',
+                        'xf32',
+                        'xf64',
+                        'xbool'), **self.kw)
+            # test exception handling 
 
 
 class TestSQLite:
