@@ -87,7 +87,7 @@ textcol, boolcol)
         sqlutil.execute('create temp table sqlutil_test1 (a int) ', conn=conn)
         sqlutil.execute('insert into sqlutil_test1 (a) values(%s)', (1, ),
                         conn=conn)
-        sqlutil.execute('drop table sqlutil_test1;', **self.kw, conn=conn)
+        sqlutil.execute('drop table sqlutil_test1;', conn=conn)
 
     def test_execute_fail(self):
         with pytest.raises(Exception):
@@ -125,7 +125,7 @@ textcol, boolcol)
         assert (len(a) == 10000000)
 
     def notest_big_interrupt(self):
-        ## temporrary disabled, as I cannot deal with sigint... 
+        ## temporary disabled, as I cannot deal with sigint... 
         conn = getconn()
         killer.interrupt(2)
         t1 = time.time()
