@@ -189,15 +189,18 @@ textcol, boolcol)
         assert (a[1][1] == 4)
 
     def test_Array2(self):
-        a, b, c, d, e = sqlutil.get(
-            '''values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],ARRAY[21::double precision,22::double precision], ARRAY[31::smallint,32::smallint], ARRAY[41::bigint, 42::bigint]) ,
-            ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],ARRAY[23::double precision, 24::double precision], ARRAY[33::smallint, 34::smallint], ARRAY[43::bigint, 44::bigint]) ''',
+        a, b, c, d, e, f = sqlutil.get(
+            '''values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],ARRAY[21::double precision,22::double precision], ARRAY[31::smallint,32::smallint], ARRAY[41::bigint, 42::bigint], ARRAY[true,false]) ,
+            ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],ARRAY[23::double precision, 24::double precision], ARRAY[33::smallint, 34::smallint], ARRAY[43::bigint, 44::bigint], ARRAY[false,false]) ''',
             **self.kw)
         assert (a[0][0] == 1)
         assert (b[0][0] == 11)
         assert (c[0][0] == 21)
         assert (d[0][0] == 31)
         assert (e[0][0] == 41)
+        assert (f[0][0])
+        assert (not f[1][0])
+        
 
     def test_get_dict(self):
         cols = 'sicol,intcol,bigicol,realcol,dpcol,textcol'
