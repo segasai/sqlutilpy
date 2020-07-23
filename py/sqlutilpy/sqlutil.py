@@ -571,6 +571,16 @@ def upload(tableName,
                              password=password,
                              host=host,
                              timeout=timeout)
+    repl_char = {' ':'_', '-':'_','(':'_',')':'_'}
+    fixed_names = []
+    for name in names:
+        fixed_name = name + ''
+        for k in repl_char.keys():
+            fixed_name = fixed_name.replace(k,repl_char[k])
+        if fixed_name != name:
+            warnings.warn('''Renamed column '%s' to '%s' '''%(name, fixed_name))
+        fixed_names.append(fixed_name)
+    names = fixed_names 
     try:
         cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=True)
         if createTable:
