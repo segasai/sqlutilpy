@@ -402,15 +402,7 @@ def get(query,
         res = [res[tmp] for tmp in res.dtype.names]
 
     except BaseException:
-        try:
-            conn.rollback()
-        except:
-            pass
-        if not connSupplied:
-            try:
-                conn.close()  # do not close if we were given the connection
-            except:
-                pass
+        failure_cleanup(conn, connSupplied)
         raise
 
     cur.close()
@@ -484,15 +476,7 @@ def execute(query,
             # sqlite3 doesn't like params here...
             cur.execute(query)
     except BaseException:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        if not connSupplied:
-            try:
-                conn.close()  # do not close if we were given the connection
-            except:
-                pass
+        failure_cleanup(conn, connSupplied)
         raise
     cur.close()
     if not noCommit:
@@ -528,6 +512,17 @@ def __print_arrays(arrays, f, sep=' '):
     recarr = np.rec.fromarrays(arrays)
     np.savetxt(f, recarr, fmt=fmt, delimiter=sep)
 
+def failure_cleanup(conn, connSuplied):
+    try:
+        conn.rollback()
+    except Exception:
+        pass
+    if not connSupplied:
+        try:
+            conn.close()  # do not close if we were given the connection
+        except:
+            pass
+    
 
 def upload(tableName,
            arrays,
@@ -599,15 +594,7 @@ def upload(tableName,
             finally:
                 psycopg2.extensions.set_wait_callback(thread)
     except BaseException:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        if not connSupplied:
-            try:
-                conn.close()  # do not close if we were given the connection
-            except:
-                pass
+        failure_cleanup(conn, connSupplied)
         raise
     if analyze:
         cur.execute('analyze %s' % tableName)
@@ -616,7 +603,6 @@ def upload(tableName,
         conn.commit()
     if not connSupplied:
         conn.close()  # do not close if we were given the connection
-
 
 def local_join(query,
                tableName,
