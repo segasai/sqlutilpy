@@ -27,8 +27,10 @@ from numpy.core import numerictypes as nt
 from select import select
 from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
+
 class SqlUtilException(Exception):
     pass
+
 
 def __wait_select_inter(conn):
     """ Make the queries interruptable by Ctrl-C
@@ -512,6 +514,7 @@ def __print_arrays(arrays, f, sep=' '):
     recarr = np.rec.fromarrays(arrays)
     np.savetxt(f, recarr, fmt=fmt, delimiter=sep)
 
+
 def failure_cleanup(conn, connSupplied):
     try:
         conn.rollback()
@@ -522,7 +525,7 @@ def failure_cleanup(conn, connSupplied):
             conn.close()  # do not close if we were given the connection
         except:
             pass
-    
+
 
 def upload(tableName,
            arrays,
@@ -566,16 +569,17 @@ def upload(tableName,
                              password=password,
                              host=host,
                              timeout=timeout)
-    repl_char = {' ':'_', '-':'_','(':'_',')':'_'}
+    repl_char = {' ': '_', '-': '_', '(': '_', ')': '_', '[': '_', ']': '_'}
     fixed_names = []
     for name in names:
         fixed_name = name + ''
         for k in repl_char.keys():
-            fixed_name = fixed_name.replace(k,repl_char[k])
+            fixed_name = fixed_name.replace(k, repl_char[k])
         if fixed_name != name:
-            warnings.warn('''Renamed column '%s' to '%s' '''%(name, fixed_name))
+            warnings.warn('''Renamed column '%s' to '%s' ''' %
+                          (name, fixed_name))
         fixed_names.append(fixed_name)
-    names = fixed_names 
+    names = fixed_names
     try:
         cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=True)
         if createTable:
@@ -603,6 +607,7 @@ def upload(tableName,
         conn.commit()
     if not connSupplied:
         conn.close()  # do not close if we were given the connection
+
 
 def local_join(query,
                tableName,

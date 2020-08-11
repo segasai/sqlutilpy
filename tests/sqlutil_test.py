@@ -11,6 +11,7 @@ PG_DB = os.environ['SQLUTIL_TEST_PG_DB']
 PG_HOST = os.environ['SQLUTIL_TEST_PG_HOST']
 PG_USER = os.environ['SQLUTIL_TEST_PG_USER']
 
+
 def getrand(N, float=False):
     # simple deterministic pseudo-random number generator
     a, c = 1103515245, 12345
@@ -125,7 +126,7 @@ textcol, boolcol)
         assert (len(a) == 10000000)
 
     def notest_big_interrupt(self):
-        ## temporary disabled, as I cannot deal with sigint... 
+        ## temporary disabled, as I cannot deal with sigint...
         conn = getconn()
         killer.interrupt(2)
         t1 = time.time()
@@ -200,7 +201,6 @@ textcol, boolcol)
         assert (e[0][0] == 41)
         assert (f[0][0])
         assert (not f[1][0])
-        
 
     def test_get_dict(self):
         cols = 'sicol,intcol,bigicol,realcol,dpcol,textcol'
@@ -263,6 +263,14 @@ textcol, boolcol)
                            ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool'),
                            **self.kw)
             # test exception handling
+        mytab1 = 'sqlutil_test_tab1'
+        # try the weird names
+        sqlutil.upload(mytab1, (xi16, xi32, xi64, xf32, xf64, xbool),
+                       ('xi 16', 'xi(32)', 'xi[64]', 'xf32', 'xf64', 'xbool'),
+                       **self.kw)
+        yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
+            '''select xi_16,xi_32_,xi_64_,xf32,xf64,xbool from %s''' %
+            (mytab1), **self.kw)
 
 
 class TestSQLite:
