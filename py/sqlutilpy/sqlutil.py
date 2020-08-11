@@ -512,7 +512,7 @@ def __print_arrays(arrays, f, sep=' '):
     recarr = np.rec.fromarrays(arrays)
     np.savetxt(f, recarr, fmt=fmt, delimiter=sep)
 
-def failure_cleanup(conn, connSuplied):
+def failure_cleanup(conn, connSupplied):
     try:
         conn.rollback()
     except Exception:
