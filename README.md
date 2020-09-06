@@ -28,7 +28,6 @@ import sqlutilpy
 ra,dec = squtilpy.get('select ra,dec from mytable', host='HOST_NAME_OF_MY_PG_SERVER', db='THE_NAME_OF_MY_DB')
 ```
 
-
 By default sqlutilpy.get executes the result and returns the tuple of 
 results
 
@@ -49,7 +48,8 @@ you could upload the arrays in the DB and run a query, but local_join function d
 ```
 myid = np.arange(10)
 y = x**.5
-sqlutilpy.local_join('select * from mytmptable as m, somebigtable as s where s.id=m.myid order by m.myid',                                                                           'mytmptable',(x,y),('myid','ycol'))
+R=sqlutilpy.local_join('select * from mytmptable as m, somebigtable as s where s.id=m.myid order by m.myid',                                                                            
+'mytmptable',(x,y),('myid','ycol'))
 ```
 It executes a query as if you arrays where in a mytmptable. ( behind the scenes
 it uploads the data to the db and runs a query)
