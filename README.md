@@ -5,7 +5,7 @@
 # sqlutilpy
 Python module to query SQL databases and return numpy arrays, upload
 tables and run join queries involving local arrays and the tables in the DB.
-The module only works for PostgreSQL and sqlite databases.
+The module only works with PostgreSQL and SQLite databases.
 
 The full documentation is available [here](http://sqlutilpy.readthedocs.io/en/latest/)
 
@@ -17,13 +17,17 @@ To install the package you just need to do pip install.
 ```
 pip install sqlutilpy
 ```
-
+## Authentification
+Throughout this readme, I'll assume that the .pgpass file ( https://www.postgresql.org/docs/11/libpq-pgpass.html ) 
+has been created with the login/password details for Postgresql. If that is not the case, all of the 
+commands given above will also need user='....' and password='...' options
 
 ## Querying the database and retrieving the results
 ```
 import sqlutilpy
 ra,dec = squtilpy.get('select ra,dec from mytable', host='HOST_NAME_OF_MY_PG_SERVER', db='THE_NAME_OF_MY_DB')
 ```
+
 
 By default sqlutilpy.get executes the result and returns the tuple of 
 results
