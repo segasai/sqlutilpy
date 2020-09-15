@@ -27,6 +27,9 @@ from numpy.core import numerictypes as nt
 from select import select
 from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
+class config:
+    arraysize = 100000
+
 
 class SqlUtilException(Exception):
     pass
@@ -120,7 +123,7 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
         if notNamed:
             return cur
         cur = conn.cursor(name='sqlutilcursor')
-        cur.arraysize = 100000
+        cur.arraysize = config.arraysize
     elif driver == 'sqlite3':
         cur = conn.cursor()
     return cur
