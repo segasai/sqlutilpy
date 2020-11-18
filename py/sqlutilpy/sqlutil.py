@@ -94,7 +94,7 @@ def getConnection(db=None,
 
     """
     if driver == 'psycopg2':
-        conn_str = "dbname=%s host=%s port=%d" % (db, host, port)
+        conn_str = "dbname=%s host=%s port=%d" % (db, host, (port or 5432))
         if user is not None:
             conn_str = conn_str + ' user=%s' % user
         if password is not None:
