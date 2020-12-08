@@ -1,15 +1,15 @@
 """Sqlutilpy module to access SQL databases
 """
 from __future__ import print_function
-import types
 import numpy
-import sys
 import numpy as np
-import time
 import psycopg2
 import threading
-import select
-_WAIT_SELECT_TIMEOUT = 10
+import collections
+import warnings
+from numpy.core import numeric as sb
+from select import select
+from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
 try:
     from cStringIO import StringIO
@@ -18,14 +18,11 @@ except ImportError:
     from io import BytesIO as StringIO
 try:
     import queue
-except:
+except ImportError:
     import Queue as queue
-import collections
-import warnings
-from numpy.core import numeric as sb
-from numpy.core import numerictypes as nt
-from select import select
-from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
+
+_WAIT_SELECT_TIMEOUT = 10
+
 
 class config:
     arraysize = 100000
@@ -38,7 +35,8 @@ class SqlUtilException(Exception):
 def __wait_select_inter(conn):
     """ Make the queries interruptable by Ctrl-C
 
-    Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/"""
+    Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/
+    """
     while True:
         try:
             state = conn.poll()
@@ -134,7 +132,6 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
                     support conversion null integers to intNullVal
     """
 
-    nfields = len(recList[0])
     shape = None
     descr = sb.dtype((np.core.records.record, dtype))
     try:
@@ -223,8 +220,12 @@ def __getDType(row, typeCodes, strLength):
         pgType = pgTypeHash[curt]
         if curt in strTypes:
             if curv is not None:
+                # if the first string value is longer than
+                # strLength use that as a maximum
                 curmax = max(strLength, len(curv))
             else:
+                # if the first value is null
+                # just use strLength
                 curmax = strLength
             pgType = pgType % (curmax, )
         if curt not in strTypes:
@@ -253,7 +254,8 @@ def get(query,
         notNamed=False,
         asDict=False,
         intNullVal=-9999):
-    '''Executes the sql query and returns the tuple or dictionary with the numpy arrays.
+    '''Executes the sql query and returns the tuple or dictionary
+    with the numpy arrays.
 
     Parameters
     ----------
@@ -265,7 +267,8 @@ def get(query,
     conn : object
           The connection object to the DB (optional) to avoid reconnecting
     asDict : boolean
-          Flag whether to retrieve the results as a dictionary with column names as keys
+        Flag whether to retrieve the results as a dictionary with column
+        names as keys
     strLength : integer
          The maximum length of the string.
         Strings will be truncated to this length
@@ -290,7 +293,8 @@ def get(query,
     Returns
     -------
     ret : Tuple or dictionary
-        By default you get a tuple with numpy arrays for each column in your query.
+        By default you get a tuple with numpy arrays for each column
+        in your query.
         If you specified asDict keyword then you get an ordered dictionary with
         your columns.
 
@@ -454,16 +458,16 @@ def execute(query,
     driver : string
         Driver for the DB connection ('psucopg2' or 'sqlite3')
     user : string, optional
-          user name for the DB connection
+        user name for the DB connection
     password : string, optional
-         DB connection password
+        DB connection password
     host : string, optional
-         Hostname of the database
+        Hostname of the database
     port : integer, optional
-         Port of the database
+        Port of the database
     noCommit: bool
-         By default execute() will commit your command. If you say noCommit, the
-         commit won't be issued.
+        By default execute() will commit your command.
+        If you say noCommit, the commit won't be issued.
     """
     connSupplied = (conn is not None)
     if not connSupplied:
@@ -642,8 +646,9 @@ def local_join(query,
     --------
     >>> x = np.arange(10)
     >>> y = x**.5
-    >>> sqlutil.local_join('select * from mytable as m, sometable as s where s.id=m.xcol',
-                                                                                                    'mytable',(x,y),('xcol','ycol'))
+    >>> sqlutil.local_join('select * from mytable as m, sometable as s
+        where s.id=m.xcol',
+        'mytable',(x,y),('xcol','ycol'))
     """
 
     connSupplied = (conn is not None)
