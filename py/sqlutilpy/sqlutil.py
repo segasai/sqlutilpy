@@ -124,6 +124,8 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
         cur.arraysize = config.arraysize
     elif driver == 'sqlite3':
         cur = conn.cursor()
+        if preamb is not None:
+            cur.execute(preamb)
     return cur
 
 
