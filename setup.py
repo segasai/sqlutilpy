@@ -46,7 +46,7 @@ setup(
     name="sqlutilpy",
     version=VERSION,
     author="Sergey Koposov",
-    author_email="skoposov@cmu.edu",
+    author_email="skoposov@ed.ac.uk",
     description=("Database query code returning numpy arrays"),
     license="BSD",
     keywords="numpy postgresql query sql sqlite array",
