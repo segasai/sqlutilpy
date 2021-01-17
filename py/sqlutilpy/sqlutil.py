@@ -12,6 +12,17 @@ from select import select
 from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
 try:
+    import astropy.table as atpy
+except ImportError:
+    # astropy is not installed
+    atpy = None
+try:
+    import pandas
+except ImportError:
+    # pandas is not installed
+    pandas = None
+
+try:
     from cStringIO import StringIO
 except ImportError:
     # for python3
@@ -538,7 +549,7 @@ def failure_cleanup(conn, connSupplied):
 
 def upload(tableName,
            arrays,
-           names,
+           names=None,
            db="wsdb",
            driver="psycopg2",
            user=None,
@@ -557,8 +568,10 @@ def upload(tableName,
     ----------
     tableName : string
         The name of the table where the data will be uploaded
-    arrays : tuple
+    arrays_or_table : tuple
         Tuple of arrays thar will be columns of the new table
+        If names are not specified, I this parameter can be pandas or
+        astropy table
     names : tuple
         Tuple of strings with column names
 
@@ -568,7 +581,6 @@ def upload(tableName,
     >>> y = x**.5
     >>> sqlutil.upload('mytable',(x,y),('xcol','ycol'))
     """
-    arrays = [np.asarray(_) for _ in arrays]
     connSupplied = (conn is not None)
     sep = '|'
     if not connSupplied:
@@ -578,6 +590,18 @@ def upload(tableName,
                              password=password,
                              host=host,
                              timeout=timeout)
+    if names is None:
+        # we assume that we were given a table
+        if atpy is not None:
+            if isinstance(arrays, atpy.Table):
+                names = arrays.columns
+                arrays = [arrays[_] for _ in names]
+        elif pandas is not None:
+            if isinstance(arrays, pandas.DataFrame):
+                names = arrays.columns
+                arrays = [arrays[_] for _ in names]
+
+    arrays = [np.asarray(_) for _ in arrays]
     repl_char = {' ': '_', '-': '_', '(': '_', ')': '_', '[': '_', ']': '_'}
     fixed_names = []
     for name in names:
