@@ -4,6 +4,7 @@ from setuptools import setup
 import glob
 import subprocess
 
+
 def get_revision():
     """
     Get the git revision of the code
@@ -15,12 +16,16 @@ def get_revision():
     """
     try:
         tmpout = subprocess.Popen(
-            'cd ' + os.path.dirname(__file__) + ' ; git log -n 1 --pretty=format:%H -- setup.py',
-            shell=True, bufsize=80, stdout=subprocess.PIPE).stdout
+            'cd ' + os.path.dirname(__file__) +
+            ' ; git log -n 1 --pretty=format:%H -- setup.py',
+            shell=True,
+            bufsize=80,
+            stdout=subprocess.PIPE).stdout
         revision = tmpout.read().decode()[:6]
         return revision
     except:
         return ''
+
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -30,27 +35,26 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-
-exec(open('py/sqlutilpy/version.py','r').read())
-VERSION  =__version__
-VERSION1 = get_revision() 
+exec(open('py/sqlutilpy/version.py', 'r').read())
+VERSION = __version__
+VERSION1 = get_revision()
 if VERSION1 != '':
-    VERSION = VERSION+'-git-'+VERSION1
+    VERSION = VERSION + '-git-' + VERSION1
 #VERSION = VERSIONPIP+'dev'+get_revision()
 
 setup(
-    name = "sqlutilpy",
-    version = VERSION,
-    author = "Sergey Koposov",
-    author_email = "skoposov@cmu.edu",
-    description = ("Database query code returning numpy arrays"),
-    license = "BSD",
-    keywords = "numpy postgresql query sql sqlite array",
-    url = "https://github.com/segasai/sqlutilpy",
+    name="sqlutilpy",
+    version=VERSION,
+    author="Sergey Koposov",
+    author_email="skoposov@cmu.edu",
+    description=("Database query code returning numpy arrays"),
+    license="BSD",
+    keywords="numpy postgresql query sql sqlite array",
+    url="https://github.com/segasai/sqlutilpy",
     packages=['sqlutilpy'],
     #scripts = [fname for fname in glob.glob(os.path.join('bin', '*'))],
-    package_dir={'':'py'},
-    package_data={'sqlutilpy':['tests']},
+    package_dir={'': 'py'},
+    package_data={'sqlutilpy': ['tests']},
     long_description=read('README.md'),
     long_description_content_type='text/markdown',
     install_requires=open('requirements.txt').readlines(),
