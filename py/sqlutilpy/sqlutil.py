@@ -591,15 +591,25 @@ def upload(tableName,
                              host=host,
                              timeout=timeout)
     if names is None:
-        # we assume that we were given a table
-        if atpy is not None:
-            if isinstance(arrays, atpy.Table):
-                names = arrays.columns
+        for i in range(1):
+            # we assume that we were given a table
+            if atpy is not None:
+                if isinstance(arrays, atpy.Table):
+                    names = arrays.columns
+                    arrays = [arrays[_] for _ in names]
+                    break
+            if pandas is not None:
+                if isinstance(arrays, pandas.DataFrame):
+                    names = arrays.columns
+                    arrays = [arrays[_] for _ in names]
+                    break
+            if isinstance(arrays, dict):
+                names = arrays.keys()
                 arrays = [arrays[_] for _ in names]
-        elif pandas is not None:
-            if isinstance(arrays, pandas.DataFrame):
-                names = arrays.columns
-                arrays = [arrays[_] for _ in names]
+                break
+            if names is None:
+                raise Exception('you either need to give astropy \
+table/pandas/dictionary or provide a separate list of arrays and their names')
 
     arrays = [np.asarray(_) for _ in arrays]
     repl_char = {' ': '_', '-': '_', '(': '_', ')': '_', '[': '_', ']': '_'}
