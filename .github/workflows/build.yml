@@ -35,7 +35,8 @@ jobs:
         run: |
           export SQLUTIL_TEST_PG_DB='postgres'
           export SQLUTIL_TEST_PG_HOST='localhost'
-          export SQLUTIL_TEST_PG_USER='postgres'
+          export SQLUTIL_TEST_PG_USER='testuser'
+          export SQLUTIL_TEST_PG_PASS='testpassword'
           py.test --cov=sqlutilpy
       - name: Coveralls
         run: |
