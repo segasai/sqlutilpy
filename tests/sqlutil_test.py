@@ -12,6 +12,7 @@ PG_HOST = os.environ['SQLUTIL_TEST_PG_HOST']
 PG_USER = os.environ['SQLUTIL_TEST_PG_USER']
 PG_PASS = os.environ['SQLUTIL_TEST_PG_PASS']
 
+
 def getrand(N, float=False):
     # simple deterministic pseudo-random number generator
     a, c = 1103515245, 12345
@@ -54,7 +55,12 @@ textcol, boolcol)
         ''')
         conn.commit()
         self.conn = conn
-        self.kw = {'host': PG_HOST, 'user': PG_USER, 'db': PG_DB,password=PG_PASS}
+        self.kw = {
+            'host': PG_HOST,
+            'user': PG_USER,
+            'db': PG_DB,
+            'password': PG_PASS
+        }
 
     def teardown(self):
         self.conn.cursor().execute('drop table sqlutil_test;')
@@ -64,7 +70,7 @@ textcol, boolcol)
         conn = sqlutil.getConnection(host=PG_HOST,
                                      user=PG_USER,
                                      db=PG_DB,
-                                     password=PG_PASS
+                                     password=PG_PASS,
                                      driver='psycopg2')
         conn.close()
         pass
