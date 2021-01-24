@@ -40,5 +40,7 @@ jobs:
           export SQLUTIL_TEST_PG_PASS='testpassword'
           py.test --cov=sqlutilpy
       - name: Coveralls
-        run: |
-          coverall
+        if: ${{ success() }}
+        run: coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
