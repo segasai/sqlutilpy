@@ -27,7 +27,6 @@ jobs:
           pg_isready
       - name: PG setup
         run: |
-          sudo -u postgres createuser -U postgres
           sudo -u postgres psql -c "create role testuser with login password 'testpassword';" postgres
       - name: Test sqlutilpy
         run: |
