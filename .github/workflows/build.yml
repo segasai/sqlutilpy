@@ -2,8 +2,6 @@ name: Regression test
 on: 
   push:
   pull_request:
-#  schedule:
-#    - cron: '0 0 * * 0' # weekly
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,17 +22,19 @@ jobs:
           pip install pytest-cov
           pip install coveralls
       - name: Start Postgres
-        run |
-        sudo systemctl start postgresql.service
-        pg_isready
+        run: |
+          sudo systemctl start postgresql.service
+          pg_isready
       - name: PG setup
-        createuser -U postgres
-        psql -c "create role testuser with login password 'testpassword';" postgres
+        run: |
+          createuser -U postgres
+          psql -c "create role testuser with login password 'testpassword';" postgres
       - name: Test sqlutilpy
-        run |
-        export SQLUTIL_TEST_PG_DB='postgres'
-        export SQLUTIL_TEST_PG_HOST='localhost'
-        export SQLUTIL_TEST_PG_USER='postgres'
-        py.test --cov=sqlutilpy
+        run: |
+          export SQLUTIL_TEST_PG_DB='postgres'
+          export SQLUTIL_TEST_PG_HOST='localhost'
+          export SQLUTIL_TEST_PG_USER='postgres'
+          py.test --cov=sqlutilpy
       - name: Coveralls
-        coverall
+        run: |
+          coverall
