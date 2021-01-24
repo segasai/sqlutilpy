@@ -37,8 +37,8 @@ def getconn():
 
 class TestPostgres:
     def setup(self):
-        conn = psycopg2.connect('dbname=%s user=%s host=%s' %
-                                (PG_DB, PG_USER, PG_HOST))
+        conn = psycopg2.connect('dbname=%s user=%s host=%s password=%s' %
+                                (PG_DB, PG_USER, PG_HOST, PG_PASS))
         cur = conn.cursor()
         cur.execute('''
 create unlogged table sqlutil_test (sicol smallint, intcol int, bigicol bigint,
