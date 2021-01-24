@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [2.7,3.5,3.6,3.7,3.8]
+        python-version: [3.6,3.7,3.8]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -27,8 +27,8 @@ jobs:
           pg_isready
       - name: PG setup
         run: |
-          createuser -U postgres
-          psql -c "create role testuser with login password 'testpassword';" postgres
+          sudo -u postgres createuser -U postgres
+          sudo -u postgres psql -c "create role testuser with login password 'testpassword';" postgres
       - name: Test sqlutilpy
         run: |
           export SQLUTIL_TEST_PG_DB='postgres'
