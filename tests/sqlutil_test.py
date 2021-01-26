@@ -302,11 +302,37 @@ textcol, boolcol)
         finally:
             sqlutil.execute('drop table %s' % mytab, **self.kw)
 
+        sqlutil.upload(
+            mytab, {
+                'xi16': xi16,
+                'xi32': xi32,
+                'xi64': xi64,
+                'xf32': xf32,
+                'xf64': xf64,
+                'xbool': xbool
+            }, **self.kw)
+        yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
+            '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab),
+            **self.kw)
+        try:
+            assert ((xi16 == yi16).all())
+            assert ((xi32 == yi32).all())
+            assert ((xi64 == yi64).all())
+            assert (np.allclose(xf32, yf32))
+            assert (np.allclose(xf64, yf64))
+            assert ((ybool == xbool).all())
+        finally:
+            sqlutil.execute('drop table %s' % mytab, **self.kw)
+
         with pytest.raises(Exception):
             sqlutil.upload(' a b c d', (xi16, xi32, xi64, xf32, xf64, xbool),
                            ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool'),
                            **self.kw)
             # test exception handling
+
+        with pytest.raises(Exception):
+            sqlutil.upload(mytab, xi16, **self.kw)
+
         mytab1 = 'sqlutil_test_tab1'
         # try the weird names
         sqlutil.upload(mytab1, (xi16, xi32, xi64, xf32, xf64, xbool),
