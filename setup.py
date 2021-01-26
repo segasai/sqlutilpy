@@ -39,8 +39,7 @@ exec(open('py/sqlutilpy/version.py', 'r').read())
 VERSION = __version__
 VERSION1 = get_revision()
 if VERSION1 != '':
-    VERSION = VERSION + '-git-' + VERSION1
-#VERSION = VERSIONPIP+'dev'+get_revision()
+    VERSION = VERSION + '+git.' + VERSION1
 
 setup(
     name="sqlutilpy",

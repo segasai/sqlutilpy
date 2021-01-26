@@ -429,6 +429,9 @@ def get(query,
 
     cur.close()
 
+    if not connSupplied:
+        conn.close()
+
     if asDict:
         resDict = collections.OrderedDict()
         repeats = {}
