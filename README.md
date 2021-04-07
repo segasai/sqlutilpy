@@ -29,7 +29,7 @@ ra,dec = squtilpy.get('select ra,dec from mytable', host='HOST_NAME_OF_MY_PG_SER
 ```
 
 By default sqlutilpy.get executes the result and returns the tuple of 
-results
+results. But you can return the results as dictionary using asDict option.
 
 ## Uploading your arrays as column in a table
 ```
@@ -53,4 +53,12 @@ R=sqlutilpy.local_join('select * from mytmptable as m, somebigtable as s where s
 ```
 It executes a query as if you arrays where in a mytmptable. ( behind the scenes
 it uploads the data to the db and runs a query)
+
+
+## Keeping the connection open. 
+
+Often it's benefitial to preserve an open connection. You can do that if you first 
+obtain the connection using sqlutilpy.getConnection() and then provide it directly
+to sqlutil.get() and friends using conn=conn argument
+
 
