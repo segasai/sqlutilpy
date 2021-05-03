@@ -1,2 +1,4 @@
-[run]
-source=py/
+[paths]
+source =
+       py/sqlutilpy/
+       **/site-packages/sqlutilpy/
