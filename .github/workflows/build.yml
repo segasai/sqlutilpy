@@ -38,6 +38,7 @@ jobs:
           export SQLUTIL_TEST_PG_HOST='localhost'
           export SQLUTIL_TEST_PG_USER='testuser'
           export SQLUTIL_TEST_PG_PASS='testpassword'
+          python update_covrc.py
           py.test --cov=sqlutilpy
       - name: Coveralls
         if: ${{ success() }}
