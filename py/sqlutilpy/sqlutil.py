@@ -22,15 +22,8 @@ except ImportError:
     # pandas is not installed
     pandas = None
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    # for python3
-    from io import BytesIO as StringIO
-try:
-    import queue
-except ImportError:
-    import Queue as queue
+from io import BytesIO as StringIO
+import queue
 
 _WAIT_SELECT_TIMEOUT = 10
 
@@ -46,7 +39,7 @@ class SqlUtilException(Exception):
 def __wait_select_inter(conn):
     """ Make the queries interruptable by Ctrl-C
 
-    Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/
+    Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/ # noqa
     """
     while True:
         try:
@@ -193,7 +186,7 @@ def __converter(qIn, qOut, endEvent, dtype, intNullVal):
             continue
         try:
             res = __fromrecords(tups, dtype=dtype, intNullVal=intNullVal)
-        except:
+        except Exception:
             print('Failed to convert input data into array')
             endEvent.set()
             raise
@@ -546,7 +539,7 @@ def failure_cleanup(conn, connSupplied):
     if not connSupplied:
         try:
             conn.close()  # do not close if we were given the connection
-        except:
+        except Exception:
             pass
 
 
