@@ -42,7 +42,7 @@ class TestPostgres:
         cur = conn.cursor()
         cur.execute('''
 create unlogged table sqlutil_test (sicol smallint, intcol int, bigicol bigint,
-        realcol real, dpcol double precision, timecol timestamp, 
+        realcol real, dpcol double precision, timecol timestamp,
 textcol varchar, boolcol bool);
 insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
 textcol, boolcol)
@@ -50,8 +50,6 @@ textcol, boolcol)
 insert into sqlutil_test (sicol, intcol, bigicol, realcol, dpcol, timecol,
 textcol, boolcol)
         values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester2', false);
-        
-
         ''')
         conn.commit()
         self.conn = conn
@@ -86,10 +84,10 @@ textcol, boolcol)
 
     def test_getConnFail(self):
         with pytest.raises(Exception):
-            conn = sqlutil.getConnection(host=PG_HOST,
-                                         user=PG_USER,
-                                         db=PG_DB,
-                                         driver='psycopgXX')
+            sqlutil.getConnection(host=PG_HOST,
+                                  user=PG_USER,
+                                  db=PG_DB,
+                                  driver='psycopgXX')
 
     def test_execute(self):
         conn = getconn()
@@ -117,7 +115,7 @@ textcol, boolcol)
     def test_local_join(self):
         R, = sqlutil.local_join(
             '''
-        select s.sicol from sqlutil_test as s,  mytab as m 
+        select s.sicol from sqlutil_test as s,  mytab as m
         where s.sicol = m.id''', 'mytab', [np.arange(10)], ['id'], **self.kw)
         assert (len(R) == 1)
 
@@ -125,7 +123,8 @@ textcol, boolcol)
         conn = getconn()
         sqlutil.execute(
             '''create temp table sqlutil_test_big (a int, b double precision);
-        insert into sqlutil_test_big select generate_series,generate_series*2 from generate_series(1,10000000);
+insert into sqlutil_test_big select generate_series,generate_series*2
+from generate_series(1,10000000);
         ''',
             conn=conn)
 
@@ -134,13 +133,13 @@ textcol, boolcol)
         assert (len(a) == 10000000)
 
     def notest_big_interrupt(self):
-        ## temporary disabled, as I cannot deal with sigint...
+        # temporary disabled, as I cannot deal with sigint...
         conn = getconn()
         killer.interrupt(2)
         t1 = time.time()
         with pytest.raises(Exception):
             a, b = sqlutil.get(
-                '''select generate_series,generate_series*2,generate_series*3 
+                '''select generate_series,generate_series*2,generate_series*3
             from generate_series(1,10000000);''',
                 conn=conn)
         t2 = time.time()
@@ -171,8 +170,8 @@ textcol, boolcol)
 
     def test_get(self):
         a, b, c, d, e, f, g = sqlutil.get(
-            'select sicol,intcol,bigicol,realcol,dpcol,textcol,boolcol from sqlutil_test order by sicol',
-            **self.kw)
+            '''select sicol,intcol,bigicol,realcol,dpcol,textcol,boolcol
+from sqlutil_test order by sicol''', **self.kw)
         assert ((a == np.array([1, 11])).all())
         assert ((b == np.array([2, 12])).all())
         assert ((c == np.array([3, 13])).all())
@@ -199,9 +198,14 @@ textcol, boolcol)
 
     def test_Array2(self):
         a, b, c, d, e, f = sqlutil.get(
-            '''values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],ARRAY[21::double precision,22::double precision], ARRAY[31::smallint,32::smallint], ARRAY[41::bigint, 42::bigint], ARRAY[true,false]) ,
-            ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],ARRAY[23::double precision, 24::double precision], ARRAY[33::smallint, 34::smallint], ARRAY[43::bigint, 44::bigint], ARRAY[false,false]) ''',
-            **self.kw)
+            '''values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],
+ARRAY[21::double precision,22::double precision],
+ARRAY[31::smallint,32::smallint], ARRAY[41::bigint, 42::bigint],
+ARRAY[true,false]) ,
+            ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],
+ARRAY[23::double precision, 24::double precision],
+ARRAY[33::smallint, 34::smallint], ARRAY[43::bigint, 44::bigint],
+ARRAY[false,false]) ''', **self.kw)
         assert (a[0][0] == 1)
         assert (b[0][0] == 11)
         assert (c[0][0] == 21)
@@ -231,15 +235,14 @@ textcol, boolcol)
 
     def test_error(self):
         with pytest.raises(Exception):
-            R0 = sqlutil.get('select 1/0 from sqlutil_test '**self.kw)
+            sqlutil.get('select 1/0 from sqlutil_test '**self.kw)
 
     def test_error1(self):
         with pytest.raises(sqlutil.SqlUtilException):
-            R0 = sqlutil.get('''select '1'::bytea from sqlutil_test ''',
-                             **self.kw)
+            sqlutil.get('''select '1'::bytea from sqlutil_test ''', **self.kw)
 
     def test_version(self):
-        VER = sqlutil.__version__
+        sqlutil.__version__
 
     def test_upload(self):
         mytab = 'sqlutil_test_tab'
@@ -355,6 +358,10 @@ class TestSQLite:
 
     def testSimple(self):
         a, b = sqlutil.get('select a,b from tmp', **self.kw)
+        assert (len(a) == 4)
+
+    def testPreamb(self):
+        a, b = sqlutil.get('select a,b from tmp', preamb='select 1', **self.kw)
         assert (len(a) == 4)
 
     def testEmpty(self):
