@@ -608,7 +608,16 @@ def upload(tableName,
 table/pandas/dictionary or provide a separate list of arrays and their names')
 
     arrays = [np.asarray(_) for _ in arrays]
-    repl_char = {' ': '_', '-': '_', '(': '_', ')': '_', '[': '_', ']': '_'}
+    repl_char = {
+        ' ': '_',
+        '-': '_',
+        '(': '_',
+        ')': '_',
+        '[': '_',
+        ']': '_',
+        '<': '_',
+        '>': '_'
+    }
     fixed_names = []
     for name in names:
         fixed_name = name + ''
