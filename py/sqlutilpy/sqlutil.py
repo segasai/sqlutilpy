@@ -517,7 +517,7 @@ def __create_schema(tableName, arrays, names, temp=False):
     outp = 'create %s table %s ' % (temp, tableName)
     outp1 = []
     for arr, name in zip(arrays, names):
-        outp1.append(name + ' ' + hash[arr.dtype.type])
+        outp1.append('"' + name + '" ' + hash[arr.dtype.type])
     return outp + '(' + ','.join(outp1) + ')'
 
 
