@@ -701,19 +701,27 @@ def local_join(query,
                              host=host,
                              timeout=timeout,
                              port=port)
+    try:
+        upload(tableName,
+               arrays,
+               names,
+               conn=conn,
+               noCommit=True,
+               temp=True,
+               analyze=True)
+    except BaseException:
+        failure_cleanup(conn, connSupplied)
+        raise
+    try:
+        res = get(query,
+                  conn=conn,
+                  preamb=preamb,
+                  strLength=strLength,
+                  asDict=asDict)
+    except BaseException:
+        failure_cleanup(conn, connSupplied)
+        raise
 
-    upload(tableName,
-           arrays,
-           names,
-           conn=conn,
-           noCommit=True,
-           temp=True,
-           analyze=True)
-    res = get(query,
-              conn=conn,
-              preamb=preamb,
-              strLength=strLength,
-              asDict=asDict)
     conn.rollback()
 
     if not connSupplied:
