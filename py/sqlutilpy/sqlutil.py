@@ -66,7 +66,7 @@ def getConnection(db=None,
                   user=None,
                   password=None,
                   host=None,
-                  port=5432,
+                  port=None,
                   timeout=None):
     """ Retrieve the connection to the DB object
 
@@ -96,12 +96,18 @@ def getConnection(db=None,
 
     """
     if driver == 'psycopg2':
-        conn_str = "dbname=%s host=%s port=%d" % (db, host, (port or 5432))
+        conn_dict = dict()
+        if db is not None:
+            conn_dict['dbname'] = db
+        if host is not None:
+            conn_dict['host'] = host
+        if port is not None:
+            conn_dict['port'] = port
         if user is not None:
-            conn_str = conn_str + ' user=%s' % user
+            conn_dict['user'] = user
         if password is not None:
-            conn_str = conn_str + ' password=%s' % password
-        conn = psycopg2.connect(conn_str)
+            conn_dict['password'] = password
+        conn = psycopg2.connect(**conn_dict)
     elif driver == 'sqlite3':
         import sqlite3
         if timeout is None:
@@ -251,10 +257,10 @@ def get(query,
         driver="psycopg2",
         user=None,
         password=None,
-        host='localhost',
+        host=None,
         preamb=None,
         conn=None,
-        port=5432,
+        port=None,
         strLength=10,
         timeout=None,
         notNamed=False,
@@ -448,7 +454,7 @@ def execute(query,
             driver="psycopg2",
             user=None,
             password=None,
-            host='localhost',
+            host=None,
             conn=None,
             preamb=None,
             timeout=None,
@@ -550,7 +556,7 @@ def upload(tableName,
            driver="psycopg2",
            user=None,
            password=None,
-           host='locahost',
+           host=None,
            conn=None,
            preamb=None,
            timeout=None,
@@ -665,8 +671,8 @@ def local_join(query,
                driver="psycopg2",
                user=None,
                password=None,
-               host='locahost',
-               port=5432,
+               host=None,
+               port=None,
                conn=None,
                preamb=None,
                timeout=None,
