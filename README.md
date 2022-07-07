@@ -22,6 +22,14 @@ Throughout this readme, I'll assume that the .pgpass file ( https://www.postgres
 has been created with the login/password details for Postgresql. If that is not the case, all of the 
 commands given above will also need user='....' and password='...' options
 
+## Connection information
+
+Most of the sqlutilpy commands require hostname, database name, user etc. 
+If you don't want to always type it, you can use standard PostgreSQL environment variables
+like PGPORT, PGDATABASE, PGUSER, PGHOST for the port, database name, user name and hostname
+of the connection. 
+
+
 ## Querying the database and retrieving the results
 ```
 import sqlutilpy
