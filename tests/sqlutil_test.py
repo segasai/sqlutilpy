@@ -72,6 +72,15 @@ textcol, boolcol)
                                      driver='psycopg2')
         conn.close()
         pass
+    def test_getConnWithPort(self):
+        conn = sqlutil.getConnection(host=PG_HOST,
+                                     user=PG_USER,
+                                     db=PG_DB,
+                                     port=5432,
+                                     password=PG_PASS,
+                                     driver='psycopg2')
+        conn.close()
+        pass
 
     def test_getConnUser(self):
         conn = sqlutil.getConnection(host=PG_HOST,
