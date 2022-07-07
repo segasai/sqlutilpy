@@ -37,7 +37,7 @@ class SqlUtilException(Exception):
 
 
 def __wait_select_inter(conn):
-    """ Make the queries interruptable by Ctrl-C
+    """ Make the queries interruptible by Ctrl-C
 
     Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/ # noqa
     """
@@ -74,7 +74,7 @@ def getConnection(db=None,
     ----------
 
     db : string
-        The name of the database (in case of Postgresql) or filename in
+        The name of the database (in case of PostgreSQL) or filename in
         case of sqlite db
     driver :  string
         The db driver (either 'psycopg2' or 'sqlite3')
@@ -312,11 +312,11 @@ def get(query,
 
     Examples
     --------
-    >>> a, b, c = sqlutil.get('select ra,dec,d25 from rc3')
+    >>> a, b, c = sqlutilpy.get('select ra,dec,d25 from rc3')
 
     You can also use the parameters in your query:
 
-    >>> a, b = squlil.get('select ra,dec from rc3 where name=?',"NGC 3166")
+    >>> a, b = sqlutilpy.get('select ra,dec from rc3 where name=?',"NGC 3166")
     '''
     connSupplied = (conn is not None)
     if not connSupplied:
@@ -471,7 +471,7 @@ def execute(query,
     db : string
         Database name
     driver : string
-        Driver for the DB connection ('psucopg2' or 'sqlite3')
+        Driver for the DB connection ('psycopg2' or 'sqlite3')
     user : string, optional
         user name for the DB connection
     password : string, optional
@@ -571,7 +571,7 @@ def upload(tableName,
     tableName : string
         The name of the table where the data will be uploaded
     arrays_or_table : tuple
-        Tuple of arrays thar will be columns of the new table
+        Tuple of arrays that will be columns of the new table
         If names are not specified, I this parameter can be pandas or
         astropy table
     names : tuple
@@ -581,7 +581,10 @@ def upload(tableName,
     --------
     >>> x = np.arange(10)
     >>> y = x**.5
-    >>> sqlutil.upload('mytable',(x,y),('xcol','ycol'))
+    >>> sqlutilpy.upload('mytable',(x,y),('xcol','ycol'))
+
+    >>> T = astropy.Table({'x':[1,2,3],'y':['a','b','c'])
+    >>> sqlutilpy.upload('mytable', T)
     """
     connSupplied = (conn is not None)
     sep = '|'
@@ -693,7 +696,7 @@ def local_join(query,
     --------
     >>> x = np.arange(10)
     >>> y = x**.5
-    >>> sqlutil.local_join('select * from mytable as m, sometable as s
+    >>> sqlutilpy.local_join('select * from mytable as m, sometable as s
         where s.id=m.xcol',
         'mytable',(x,y),('xcol','ycol'))
     """
