@@ -36,6 +36,7 @@ def getconn():
 
 
 class TestPostgres:
+
     def setup(self):
         conn = psycopg2.connect('dbname=%s user=%s host=%s password=%s' %
                                 (PG_DB, PG_USER, PG_HOST, PG_PASS))
@@ -72,6 +73,15 @@ textcol, boolcol)
                                      driver='psycopg2')
         conn.close()
         pass
+
+    def test_getConnEnv(self):
+        os.environ['PGHOST'] = PG_HOST
+        os.environ['PGUSER'] = PG_USER
+        os.environ['PGDATABASE'] = PG_DB
+        conn = sqlutil.getConnection(driver='psycopg2', password=PG_PASS)
+        conn.close()
+        pass
+
     def test_getConnWithPort(self):
         conn = sqlutil.getConnection(host=PG_HOST,
                                      user=PG_USER,
@@ -356,6 +366,7 @@ ARRAY[false,false]) ''', **self.kw)
 
 
 class TestSQLite:
+
     def setup(self):
         self.fname = 'sql.db'
         self.kw = dict(db=self.fname, driver='sqlite3')
