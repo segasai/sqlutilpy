@@ -68,7 +68,9 @@ def getConnection(db=None,
                   host=None,
                   port=None,
                   timeout=None):
-    """ Retrieve the connection to the DB object
+    """
+    Obtain the connection object to the DB.
+    It may be useful to avoid reconnecting to the DB repeatedly.
 
     Parameters
     ----------
@@ -119,7 +121,9 @@ def getConnection(db=None,
 
 
 def getCursor(conn, driver=None, preamb=None, notNamed=False):
-    """Retrieve the cursor"""
+    """
+    Retrieve the database cursor
+    """
     if driver == 'psycopg2':
         cur = conn.cursor()
         if preamb is not None:
@@ -140,8 +144,9 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
 
 
 def __fromrecords(recList, dtype=None, intNullVal=None):
-    """ This function was taken from np.core.records and updated to
-                    support conversion null integers to intNullVal
+    """
+    This function was taken from np.core.records and updated to
+    support conversion null integers to intNullVal
     """
 
     shape = None
@@ -266,41 +271,42 @@ def get(query,
         notNamed=False,
         asDict=False,
         intNullVal=-9999):
-    '''Executes the sql query and returns the tuple or dictionary
+    '''
+    Executes the sql query and returns the tuple or dictionary
     with the numpy arrays.
 
     Parameters
     ----------
     query : string
-         Query you want to execute, can include question
-          marks to refer to query parameters
+        Query you want to execute, can include question
+        marks to refer to query parameters
     params : tuple
-         Query parameters
+        Query parameters
     conn : object
-          The connection object to the DB (optional) to avoid reconnecting
+        The connection object to the DB (optional) to avoid reconnecting
     asDict : boolean
         Flag whether to retrieve the results as a dictionary with column
         names as keys
     strLength : integer
-         The maximum length of the string.
+        The maximum length of the string.
         Strings will be truncated to this length
     intNullVal : integer, optional
-          All the integer columns with nulls will have null replaced by
-                             this value
+        All the integer columns with nulls will have null replaced by
+        this value
     db : string
         The name of the database
     driver : string, optional
-         The sql driver to be used (psycopg2 or sqlite3)
+        The sql driver to be used (psycopg2 or sqlite3)
     user : string, optional
-          user name for the DB connection
+        User name for the DB connection
     password : string, optional
-         DB connection password
+        DB connection password
     host : string, optional
-         Hostname of the database
+        Hostname of the database
     port : integer, optional
-         Port of the database
+        Port of the database
     preamb : string
-           SQL code to be executed before the query
+        SQL code to be executed before the query
 
     Returns
     -------
@@ -313,11 +319,12 @@ def get(query,
     Examples
     --------
     >>> a, b, c = sqlutilpy.get('select ra,dec,d25 from rc3')
-
+    
     You can also use the parameters in your query:
-
-    >>> a, b = sqlutilpy.get('select ra,dec from rc3 where name=?',"NGC 3166")
+    
+    >>> a, b = sqlutilpy.get('select ra,dec from rc3 where name=?', "NGC 3166")
     '''
+
     connSupplied = (conn is not None)
     if not connSupplied:
         conn = getConnection(db=db,
@@ -459,11 +466,11 @@ def execute(query,
             preamb=None,
             timeout=None,
             noCommit=False):
-    """Execute a given SQL command without returning the results
+    """
+    Execute a given SQL command without returning the results
 
     Parameters
     ----------
-
     query: string
         The query or command you are executing
     params: tuple, optional
@@ -483,6 +490,12 @@ def execute(query,
     noCommit: bool
         By default execute() will commit your command.
         If you say noCommit, the commit won't be issued.
+
+    Examples
+    --------
+    >>> sqlutil.execute('drop table mytab', conn=conn)
+    >>> sqlutil.execute('create table mytab (a int)', db='mydb')
+
     """
     connSupplied = (conn is not None)
     if not connSupplied:
@@ -564,7 +577,8 @@ def upload(tableName,
            temp=False,
            analyze=False,
            createTable=True):
-    """ Upload the data stored in the tuple of arrays in the DB
+    """
+    Upload the data stored in the tuple of arrays in the DB
 
     Parameters
     ----------
@@ -581,9 +595,9 @@ def upload(tableName,
     --------
     >>> x = np.arange(10)
     >>> y = x**.5
-    >>> sqlutilpy.upload('mytable',(x,y),('xcol','ycol'))
+    >>> sqlutilpy.upload('mytable', (x, y), ('xcol', 'ycol'))
 
-    >>> T = astropy.Table({'x':[1,2,3],'y':['a','b','c'])
+    >>> T = astropy.Table({'x':[1, 2, 3], 'y':['a', 'b', 'c'])
     >>> sqlutilpy.upload('mytable', T)
     """
     connSupplied = (conn is not None)
@@ -681,9 +695,10 @@ def local_join(query,
                timeout=None,
                strLength=20,
                asDict=False):
-    """ Join the data from python with the data in the database
-    This command first uploads the data in the DB and then runs a
-    user specified query.
+    """
+    Join your local data in python with the data in the database
+    This command first uploads the data in the DB creating a temporary table
+    and then runs a user specified query that can your local data.
 
     Parameters
     ----------
@@ -694,11 +709,15 @@ def local_join(query,
 
     Examples
     --------
+    This will extract the rows from the table sometable matching 
+    to the provided array x
+
     >>> x = np.arange(10)
     >>> y = x**.5
-    >>> sqlutilpy.local_join('select * from mytable as m, sometable as s
-        where s.id=m.xcol',
-        'mytable',(x,y),('xcol','ycol'))
+    >>> sqlutilpy.local_join('''
+    ... SELECT s.* FROM mytable AS m LEFT JOIN sometable AS s
+    ... ON s.x = m.x ORDER BY m.xcol''',
+    ... 'mytable', (x, y), ('x', 'y'))
     """
 
     connSupplied = (conn is not None)

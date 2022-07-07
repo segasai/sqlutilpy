@@ -6,8 +6,15 @@
 Welcome to sqlutilpy's documentation!
 =====================================
 
+
+This is the package that allows you to query PostgreSQL or SQLite database
+and retrieve the results as numpy arrays.
+
+
+
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
 .. automodule:: sqlutilpy
