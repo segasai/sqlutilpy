@@ -268,7 +268,7 @@ ARRAY[false,false]) ''', **self.kw)
         mytab = 'sqlutil_test_tab'
         nrows = 10
         xi16 = np.arange(nrows, dtype=np.int16)
-        xi32 = np.arange(nrows, sdtype=np.int32)
+        xi32 = np.arange(nrows, dtype=np.int32)
         xi64 = np.arange(nrows, dtype=np.int64)
         xf = getrand(nrows, True)
         xf32 = xf.astype(np.float32)
@@ -281,43 +281,32 @@ ARRAY[false,false]) ''', **self.kw)
         xstr[1] = ',:;'  # just to test delimiting
         xstr = np.array(xstr)
         xbool = np.arange(len(xi16)) < (len(xi16) / 2.)
-        sqlutil.upload(
-            mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xstr),
-            ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xstr'),
-            **self.kw)
-        yi16, yi32, yi64, yf32, yf64, ybool, ystr = sqlutil.get(
-            '''select xi16,xi32,xi64,xf32,xf64,xbool,xstr from %s''' % (mytab),
-            **self.kw)
-        try:
-            assert ((xi16 == yi16).all())
-            assert ((xi32 == yi32).all())
-            assert ((xi64 == yi64).all())
-            assert (np.allclose(xf32, yf32))
-            assert (np.allclose(xf64, yf64))
-            assert ((ybool == xbool).all())
-            assert ((ystr == xstr).all())
-        finally:
-            sqlutil.execute('drop table %s' % mytab, **self.kw)
 
-        # test a different delimiter
-        sqlutil.upload(
-            mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xstr),
-            ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xstr'),
-            delimiter='*',
-            **self.kw)
-        yi16, yi32, yi64, yf32, yf64, ybool, ystr = sqlutil.get(
-            '''select xi16,xi32,xi64,xf32,xf64,xbool,xstr from %s''' % (mytab),
-            **self.kw)
-        try:
-            assert ((xi16 == yi16).all())
-            assert ((xi32 == yi32).all())
-            assert ((xi64 == yi64).all())
-            assert (np.allclose(xf32, yf32))
-            assert (np.allclose(xf64, yf64))
-            assert ((ybool == xbool).all())
-            assert ((ystr == xstr).all())
-        finally:
-            sqlutil.execute('drop table %s' % mytab, **self.kw)
+        for i in range(2):
+            if i == 0:
+                sqlutil.upload(
+                    mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xstr),
+                    ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xstr'),
+                    **self.kw)
+            elif i == 1:
+                sqlutil.upload(
+                    mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xstr),
+                    ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xstr'),
+                    delimiter='*',
+                    **self.kw)
+            yi16, yi32, yi64, yf32, yf64, ybool, ystr = sqlutil.get(
+                '''select xi16,xi32,xi64,xf32,xf64,xbool,xstr from %s''' %
+                (mytab), **self.kw)
+            try:
+                assert ((xi16 == yi16).all())
+                assert ((xi32 == yi32).all())
+                assert ((xi64 == yi64).all())
+                assert (np.allclose(xf32, yf32))
+                assert (np.allclose(xf64, yf64))
+                assert ((ybool == xbool).all())
+                assert ((ystr == xstr).all())
+            finally:
+                sqlutil.execute('drop table %s' % mytab, **self.kw)
 
         # test astropy table ingestion
         import astropy.table as atpy
