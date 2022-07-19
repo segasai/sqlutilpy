@@ -319,9 +319,9 @@ def get(query,
     Examples
     --------
     >>> a, b, c = sqlutilpy.get('select ra,dec,d25 from rc3')
-    
+
     You can also use the parameters in your query:
-    
+
     >>> a, b = sqlutilpy.get('select ra,dec from rc3 where name=?', "NGC 3166")
     '''
 
@@ -540,14 +540,18 @@ def __create_schema(tableName, arrays, names, temp=False):
     return outp + '(' + ','.join(outp1) + ')'
 
 
-def __print_arrays(arrays, f, sep=' '):
-    hash = dict([(np.int32, '%d'), (np.int64, '%d'), (np.int16, '%d'),
-                 (np.uint8, '%d'), (np.float32, '%.18e'),
-                 (np.float64, '%.18e'), (np.string_, '%s'), (np.str_, '%s'),
-                 (np.datetime64, '%s'), (np.bool_, '%d')])
-    fmt = [hash[x.dtype.type] for x in arrays]
+def __print_arrays(arrays, f, delimiter=' '):
+    """
+    print the input arrays into the open file separated by a delimiter
+    """
+    format_dict = dict([(np.int32, '%d'), (np.int64, '%d'), (np.int16, '%d'),
+                        (np.uint8, '%d'), (np.float32, '%.18e'),
+                        (np.float64, '%.18e'), (np.string_, '%s'),
+                        (np.str_, '%s'), (np.datetime64, '%s'),
+                        (np.bool_, '%d')])
+    fmt = [format_dict[x.dtype.type] for x in arrays]
     recarr = np.rec.fromarrays(arrays)
-    np.savetxt(f, recarr, fmt=fmt, delimiter=sep)
+    np.savetxt(f, recarr, fmt=fmt, delimiter=delimiter)
 
 
 def failure_cleanup(conn, connSupplied):
@@ -576,7 +580,8 @@ def upload(tableName,
            noCommit=False,
            temp=False,
            analyze=False,
-           createTable=True):
+           createTable=True,
+           delimiter='|'):
     """
     Upload the data stored in the tuple of arrays in the DB
 
@@ -589,7 +594,29 @@ def upload(tableName,
         If names are not specified, I this parameter can be pandas or
         astropy table
     names : tuple
-        Tuple of strings with column names
+    db: string
+         Databas name
+    driver: string
+         Python database driver "psycopg2",
+    user: string,
+    password: string
+    host: string
+    conn: object
+         SQL connection
+    preamb: string
+         The string/query to be executed before your command
+    noCommit: bool
+         If true, the commit is not executed and the table will go away
+         after the disconnect
+    temp: bool
+         If true a temporary table will be created
+    analyze: bool
+         if True, the table will be analyzed after the upload
+    createTable: bool
+         if True the table will be created before uploading (default)
+    delimiter: string
+         the string used for delimiting the input data when ingesting into
+         the db (default is |)
 
     Examples
     --------
@@ -601,7 +628,6 @@ def upload(tableName,
     >>> sqlutilpy.upload('mytable', T)
     """
     connSupplied = (conn is not None)
-    sep = '|'
     if not connSupplied:
         conn = getConnection(db=db,
                              driver=driver,
@@ -660,12 +686,14 @@ table/pandas/dictionary or provide a separate list of arrays and their names')
         N = len(arrays[0])
         for i in range(0, N, nsplit):
             f = StringIO()
-            __print_arrays([_[i:i + nsplit] for _ in arrays], f, sep=sep)
+            __print_arrays([_[i:i + nsplit] for _ in arrays],
+                           f,
+                           delimiter=delimiter)
             f.seek(0)
             try:
                 thread = psycopg2.extensions.get_wait_callback()
                 psycopg2.extensions.set_wait_callback(None)
-                cur.copy_from(f, tableName, sep=sep, columns=names)
+                cur.copy_from(f, tableName, sep=delimiter, columns=names)
             finally:
                 psycopg2.extensions.set_wait_callback(thread)
     except BaseException:
@@ -709,7 +737,7 @@ def local_join(query,
 
     Examples
     --------
-    This will extract the rows from the table sometable matching 
+    This will extract the rows from the table sometable matching
     to the provided array x
 
     >>> x = np.arange(10)

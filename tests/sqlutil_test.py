@@ -1,4 +1,5 @@
 import pytest
+import string
 import os
 import psycopg2
 import numpy as np
@@ -265,18 +266,27 @@ ARRAY[false,false]) ''', **self.kw)
 
     def test_upload(self):
         mytab = 'sqlutil_test_tab'
-        xi16 = np.arange(10, dtype=np.int16)
-        xi32 = np.arange(10, dtype=np.int32)
-        xi64 = np.arange(10, dtype=np.int64)
-        xf = getrand(10, True)
+        nrows = 10
+        xi16 = np.arange(nrows, dtype=np.int16)
+        xi32 = np.arange(nrows, sdtype=np.int32)
+        xi64 = np.arange(nrows, dtype=np.int64)
+        xf = getrand(nrows, True)
         xf32 = xf.astype(np.float32)
         xf64 = xf.astype(np.float64)
+        strL = 15
+        xstr = [
+            ''.join(np.random.choice(list(string.ascii_letters), strL))
+            for i in range(nrows)
+        ]
+        xstr[1] = ',:;'  # just to test delimiting
+        xstr = np.array(xstr)
         xbool = np.arange(len(xi16)) < (len(xi16) / 2.)
-        sqlutil.upload(mytab, (xi16, xi32, xi64, xf32, xf64, xbool),
-                       ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool'),
-                       **self.kw)
-        yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
-            '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab),
+        sqlutil.upload(
+            mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xstr),
+            ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xstr'),
+            **self.kw)
+        yi16, yi32, yi64, yf32, yf64, ybool, ystr = sqlutil.get(
+            '''select xi16,xi32,xi64,xf32,xf64,xbool,xstr from %s''' % (mytab),
             **self.kw)
         try:
             assert ((xi16 == yi16).all())
@@ -285,9 +295,31 @@ ARRAY[false,false]) ''', **self.kw)
             assert (np.allclose(xf32, yf32))
             assert (np.allclose(xf64, yf64))
             assert ((ybool == xbool).all())
+            assert ((ystr == xstr).all())
         finally:
             sqlutil.execute('drop table %s' % mytab, **self.kw)
 
+        # test a different delimiter
+        sqlutil.upload(
+            mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xstr),
+            ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xstr'),
+            delimiter='*',
+            **self.kw)
+        yi16, yi32, yi64, yf32, yf64, ybool, ystr = sqlutil.get(
+            '''select xi16,xi32,xi64,xf32,xf64,xbool,xstr from %s''' % (mytab),
+            **self.kw)
+        try:
+            assert ((xi16 == yi16).all())
+            assert ((xi32 == yi32).all())
+            assert ((xi64 == yi64).all())
+            assert (np.allclose(xf32, yf32))
+            assert (np.allclose(xf64, yf64))
+            assert ((ybool == xbool).all())
+            assert ((ystr == xstr).all())
+        finally:
+            sqlutil.execute('drop table %s' % mytab, **self.kw)
+
+        # test astropy table ingestion
         import astropy.table as atpy
         astroTab = atpy.Table({
             'xi16': xi16,
