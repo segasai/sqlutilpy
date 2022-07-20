@@ -208,6 +208,7 @@ def __getDType(row, typeCodes, strLength):
     pgTypeHash = {
         16: bool,
         18: str,
+        19: str, # name type used in information schema
         20: 'i8',
         21: 'i2',
         23: 'i4',
