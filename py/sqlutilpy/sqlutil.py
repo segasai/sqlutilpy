@@ -213,7 +213,6 @@ def __getDType(row, typeCodes, strLength):
         21: 'i2',
         23: 'i4',
         1007: 'i4',
-        25: '|U%d',
         700: 'f4',
         701: 'f8',
         1000: bool,
@@ -222,11 +221,12 @@ def __getDType(row, typeCodes, strLength):
         1016: 'i8',
         1021: 'f4',
         1022: 'f8',
-        1042: '|U%d',  # character()
-        1043: '|U%d',  # varchar
         1700: 'f8',  # numeric
         1114: '<M8[us]',  # timestamp
-        1082: '<M8[us]'  # date
+        1082: '<M8[us]',  # date 
+        25: '|U%d',
+        1042: '|U%d',  # character()
+        1043: '|U%d'  # varchar
     }
     strTypes = [25, 1042, 1043]
 
@@ -234,7 +234,7 @@ def __getDType(row, typeCodes, strLength):
 
     for i, (curv, curt) in enumerate(zip(row, typeCodes)):
         if curt not in pgTypeHash:
-            raise SqlUtilException('Unknown PG type  %d' % curt)
+            raise SqlUtilException('Unknown PG type %d' % curt)
         pgType = pgTypeHash[curt]
         if curt in strTypes:
             if curv is not None:
