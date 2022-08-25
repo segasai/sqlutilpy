@@ -1,6 +1,7 @@
 [![Build Status](https://github.com/segasai/sqlutilpy/workflows/Testing/badge.svg)](https://github.com/segasai/sqlutilpy/actions)
 [![Documentation Status](https://readthedocs.org/projects/sqlutilpy/badge/?version=latest)](http://sqlutilpy.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/segasai/sqlutilpy/badge.svg?branch=master)](https://coveralls.io/github/segasai/sqlutilpy?branch=master)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6867957.svg)](https://doi.org/10.5281/zenodo.6867957)
 
 # sqlutilpy
 Python module to query SQL databases and return numpy arrays, upload
@@ -70,3 +71,5 @@ obtain the connection using sqlutilpy.getConnection() and then provide it direct
 to sqlutil.get() and friends using conn=conn argument
 
 
+# How to cite it
+If you use this, please cite it through zenodo https://doi.org/10.5281/zenodo.6867957
