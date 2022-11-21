@@ -32,16 +32,18 @@ of the connection.
 
 
 ## Querying the database and retrieving the results
-```
+```python
 import sqlutilpy
-ra,dec = squtilpy.get('select ra,dec from mytable', host='HOST_NAME_OF_MY_PG_SERVER', db='THE_NAME_OF_MY_DB')
+ra,dec = squtilpy.get('select ra,dec from mytable', 
+                 host='HOST_NAME_OF_MY_PG_SERVER', 
+                 db='THE_NAME_OF_MY_DB')
 ```
 
 By default sqlutilpy.get executes the result and returns the tuple of 
 results. But you can return the results as dictionary using asDict option.
 
 ## Uploading your arrays as column in a table
-```
+```python
 x = np.arange(10)                                                   
 y = x**.5                                                           
 sqlutilpy.upload('mytable',(x,y),('xcol','ycol'))    
@@ -54,11 +56,11 @@ Imagine you have arrays myid and y and you want to to extract all the
 information from somebigtable for objects with id=myid. In principle
 you could upload the arrays in the DB and run a query, but local_join function does that for you.
 
-```
+```python
 myid = np.arange(10)
 y = x**.5
-R=sqlutilpy.local_join('select * from mytmptable as m, somebigtable as s where s.id=m.myid order by m.myid',                                                                            
-'mytmptable',(x,y),('myid','ycol'))
+R=sqlutilpy.local_join('''select * from mytmptable as m, 
+           somebigtable as s where s.id=m.myid order by m.myid''',                                                                       'mytmptable',(x,y),('myid','ycol'))
 ```
 It executes a query as if you arrays where in a mytmptable. ( behind the scenes
 it uploads the data to the db and runs a query)
