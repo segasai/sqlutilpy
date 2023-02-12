@@ -38,7 +38,7 @@ class SqlUtilException(Exception):
 
 
 def __wait_select_inter(conn):
-    """ Make the queries interruptable by Ctrl-C
+    """ Make the queries interruptible by Ctrl-C
 
     Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/ # noqa
     """
@@ -67,15 +67,17 @@ def getConnection(db=None,
                   user=None,
                   password=None,
                   host=None,
-                  port=5432,
+                  port=None,
                   timeout=None):
-    """ Retrieve the connection to the DB object
+    """
+    Obtain the connection object to the DB.
+    It may be useful to avoid reconnecting to the DB repeatedly.
 
     Parameters
     ----------
 
     db : string
-        The name of the database (in case of Postgresql) or filename in
+        The name of the database (in case of PostgreSQL) or filename in
         case of sqlite db
     driver :  string
         The db driver (either 'psycopg2' or 'sqlite3')
@@ -97,12 +99,18 @@ def getConnection(db=None,
 
     """
     if driver == 'psycopg2':
-        conn_str = "dbname=%s host=%s port=%d" % (db, host, (port or 5432))
+        conn_dict = dict()
+        if db is not None:
+            conn_dict['dbname'] = db
+        if host is not None:
+            conn_dict['host'] = host
+        if port is not None:
+            conn_dict['port'] = port
         if user is not None:
-            conn_str = conn_str + ' user=%s' % user
+            conn_dict['user'] = user
         if password is not None:
-            conn_str = conn_str + ' password=%s' % password
-        conn = psycopg2.connect(conn_str)
+            conn_dict['password'] = password
+        conn = psycopg2.connect(**conn_dict)
     elif driver == 'sqlite3':
         import sqlite3
         if timeout is None:
@@ -114,7 +122,9 @@ def getConnection(db=None,
 
 
 def getCursor(conn, driver=None, preamb=None, notNamed=False):
-    """Retrieve the cursor"""
+    """
+    Retrieve the database cursor
+    """
     if driver == 'psycopg2':
         cur = conn.cursor()
         if preamb is not None:
@@ -135,8 +145,9 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
 
 
 def __fromrecords(recList, dtype=None, intNullVal=None):
-    """ This function was taken from np.core.records and updated to
-                    support conversion null integers to intNullVal
+    """
+    This function was taken from np.core.records and updated to
+    support conversion null integers to intNullVal
     """
 
     shape = None
@@ -198,11 +209,11 @@ def __getDType(row, typeCodes, strLength):
     pgTypeHash = {
         16: bool,
         18: str,
+        19: str,  # name type used in information schema
         20: 'i8',
         21: 'i2',
         23: 'i4',
         1007: 'i4',
-        25: '|U%d',
         700: 'f4',
         701: 'f8',
         1000: bool,
@@ -211,11 +222,12 @@ def __getDType(row, typeCodes, strLength):
         1016: 'i8',
         1021: 'f4',
         1022: 'f8',
-        1042: '|U%d',  # character()
-        1043: '|U%d',  # varchar
         1700: 'f8',  # numeric
         1114: '<M8[us]',  # timestamp
-        1082: '<M8[us]'  # date
+        1082: '<M8[us]',  # date 
+        25: '|U%d',
+        1042: '|U%d',  # character()
+        1043: '|U%d'  # varchar
     }
     strTypes = [25, 1042, 1043]
 
@@ -223,7 +235,7 @@ def __getDType(row, typeCodes, strLength):
 
     for i, (curv, curt) in enumerate(zip(row, typeCodes)):
         if curt not in pgTypeHash:
-            raise SqlUtilException('Unknown PG type  %d' % curt)
+            raise SqlUtilException('Unknown PG type %d' % curt)
         pgType = pgTypeHash[curt]
         if curt in strTypes:
             if curv is not None:
@@ -252,50 +264,51 @@ def get(query,
         driver="psycopg2",
         user=None,
         password=None,
-        host='localhost',
+        host=None,
         preamb=None,
         conn=None,
-        port=5432,
+        port=None,
         strLength=STRLEN_DEFAULT,
         timeout=None,
         notNamed=False,
         asDict=False,
         intNullVal=-9999):
-    '''Executes the sql query and returns the tuple or dictionary
+    '''
+    Executes the sql query and returns the tuple or dictionary
     with the numpy arrays.
 
     Parameters
     ----------
     query : string
-         Query you want to execute, can include question
-          marks to refer to query parameters
+        Query you want to execute, can include question
+        marks to refer to query parameters
     params : tuple
-         Query parameters
+        Query parameters
     conn : object
-          The connection object to the DB (optional) to avoid reconnecting
+        The connection object to the DB (optional) to avoid reconnecting
     asDict : boolean
         Flag whether to retrieve the results as a dictionary with column
         names as keys
     strLength : integer
-         The maximum length of the string.
+        The maximum length of the string.
         Strings will be truncated to this length
     intNullVal : integer, optional
-          All the integer columns with nulls will have null replaced by
-                             this value
+        All the integer columns with nulls will have null replaced by
+        this value
     db : string
         The name of the database
     driver : string, optional
-         The sql driver to be used (psycopg2 or sqlite3)
+        The sql driver to be used (psycopg2 or sqlite3)
     user : string, optional
-          user name for the DB connection
+        User name for the DB connection
     password : string, optional
-         DB connection password
+        DB connection password
     host : string, optional
-         Hostname of the database
+        Hostname of the database
     port : integer, optional
-         Port of the database
+        Port of the database
     preamb : string
-           SQL code to be executed before the query
+        SQL code to be executed before the query
 
     Returns
     -------
@@ -307,12 +320,13 @@ def get(query,
 
     Examples
     --------
-    >>> a, b, c = sqlutil.get('select ra,dec,d25 from rc3')
+    >>> a, b, c = sqlutilpy.get('select ra,dec,d25 from rc3')
 
     You can also use the parameters in your query:
 
-    >>> a, b = squlil.get('select ra,dec from rc3 where name=?',"NGC 3166")
+    >>> a, b = sqlutilpy.get('select ra,dec from rc3 where name=?', "NGC 3166")
     '''
+
     connSupplied = (conn is not None)
     if not connSupplied:
         conn = getConnection(db=db,
@@ -449,16 +463,16 @@ def execute(query,
             driver="psycopg2",
             user=None,
             password=None,
-            host='localhost',
+            host=None,
             conn=None,
             preamb=None,
             timeout=None,
             noCommit=False):
-    """Execute a given SQL command without returning the results
+    """
+    Execute a given SQL command without returning the results
 
     Parameters
     ----------
-
     query: string
         The query or command you are executing
     params: tuple, optional
@@ -466,7 +480,7 @@ def execute(query,
     db : string
         Database name
     driver : string
-        Driver for the DB connection ('psucopg2' or 'sqlite3')
+        Driver for the DB connection ('psycopg2' or 'sqlite3')
     user : string, optional
         user name for the DB connection
     password : string, optional
@@ -478,6 +492,12 @@ def execute(query,
     noCommit: bool
         By default execute() will commit your command.
         If you say noCommit, the commit won't be issued.
+
+    Examples
+    --------
+    >>> sqlutil.execute('drop table mytab', conn=conn)
+    >>> sqlutil.execute('create table mytab (a int)', db='mydb')
+
     """
     connSupplied = (conn is not None)
     if not connSupplied:
@@ -522,14 +542,18 @@ def __create_schema(tableName, arrays, names, temp=False):
     return outp + '(' + ','.join(outp1) + ')'
 
 
-def __print_arrays(arrays, f, sep=' '):
-    hash = dict([(np.int32, '%d'), (np.int64, '%d'), (np.int16, '%d'),
-                 (np.uint8, '%d'), (np.float32, '%.18e'),
-                 (np.float64, '%.18e'), (np.string_, '%s'), (np.str_, '%s'),
-                 (np.datetime64, '%s'), (np.bool_, '%d')])
-    fmt = [hash[x.dtype.type] for x in arrays]
+def __print_arrays(arrays, f, delimiter=' '):
+    """
+    print the input arrays into the open file separated by a delimiter
+    """
+    format_dict = dict([(np.int32, '%d'), (np.int64, '%d'), (np.int16, '%d'),
+                        (np.uint8, '%d'), (np.float32, '%.18e'),
+                        (np.float64, '%.18e'), (np.string_, '%s'),
+                        (np.str_, '%s'), (np.datetime64, '%s'),
+                        (np.bool_, '%d')])
+    fmt = [format_dict[x.dtype.type] for x in arrays]
     recarr = np.rec.fromarrays(arrays)
-    np.savetxt(f, recarr, fmt=fmt, delimiter=sep)
+    np.savetxt(f, recarr, fmt=fmt, delimiter=delimiter)
 
 
 def failure_cleanup(conn, connSupplied):
@@ -551,35 +575,61 @@ def upload(tableName,
            driver="psycopg2",
            user=None,
            password=None,
-           host='locahost',
+           host=None,
            conn=None,
            preamb=None,
            timeout=None,
            noCommit=False,
            temp=False,
            analyze=False,
-           createTable=True):
-    """ Upload the data stored in the tuple of arrays in the DB
+           createTable=True,
+           delimiter='|'):
+    """
+    Upload the data stored in the tuple of arrays in the DB
 
     Parameters
     ----------
     tableName : string
         The name of the table where the data will be uploaded
     arrays_or_table : tuple
-        Tuple of arrays thar will be columns of the new table
+        Tuple of arrays that will be columns of the new table
         If names are not specified, I this parameter can be pandas or
         astropy table
     names : tuple
-        Tuple of strings with column names
+    db: string
+         Databas name
+    driver: string
+         Python database driver "psycopg2",
+    user: string,
+    password: string
+    host: string
+    conn: object
+         SQL connection
+    preamb: string
+         The string/query to be executed before your command
+    noCommit: bool
+         If true, the commit is not executed and the table will go away
+         after the disconnect
+    temp: bool
+         If true a temporary table will be created
+    analyze: bool
+         if True, the table will be analyzed after the upload
+    createTable: bool
+         if True the table will be created before uploading (default)
+    delimiter: string
+         the string used for delimiting the input data when ingesting into
+         the db (default is |)
 
     Examples
     --------
     >>> x = np.arange(10)
     >>> y = x**.5
-    >>> sqlutil.upload('mytable',(x,y),('xcol','ycol'))
+    >>> sqlutilpy.upload('mytable', (x, y), ('xcol', 'ycol'))
+
+    >>> T = astropy.Table({'x':[1, 2, 3], 'y':['a', 'b', 'c'])
+    >>> sqlutilpy.upload('mytable', T)
     """
     connSupplied = (conn is not None)
-    sep = '|'
     if not connSupplied:
         conn = getConnection(db=db,
                              driver=driver,
@@ -638,12 +688,14 @@ table/pandas/dictionary or provide a separate list of arrays and their names')
         N = len(arrays[0])
         for i in range(0, N, nsplit):
             f = StringIO()
-            __print_arrays([_[i:i + nsplit] for _ in arrays], f, sep=sep)
+            __print_arrays([_[i:i + nsplit] for _ in arrays],
+                           f,
+                           delimiter=delimiter)
             f.seek(0)
             try:
                 thread = psycopg2.extensions.get_wait_callback()
                 psycopg2.extensions.set_wait_callback(None)
-                cur.copy_from(f, tableName, sep=sep, columns=names)
+                cur.copy_from(f, tableName, sep=delimiter, columns=names)
             finally:
                 psycopg2.extensions.set_wait_callback(thread)
     except BaseException:
@@ -666,17 +718,18 @@ def local_join(query,
                driver="psycopg2",
                user=None,
                password=None,
-               host='locahost',
-               port=5432,
+               host=None,
+               port=None,
                conn=None,
                preamb=None,
                timeout=None,
                strLength=STRLEN_DEFAULT,
                intNullVal=-9999,
                asDict=False):
-    """ Join the data from python with the data in the database
-    This command first uploads the data in the DB and then runs a
-    user specified query.
+    """
+    Join your local data in python with the data in the database
+    This command first uploads the data in the DB creating a temporary table
+    and then runs a user specified query that can your local data.
 
     Parameters
     ----------
@@ -687,11 +740,15 @@ def local_join(query,
 
     Examples
     --------
+    This will extract the rows from the table sometable matching
+    to the provided array x
+
     >>> x = np.arange(10)
     >>> y = x**.5
-    >>> sqlutil.local_join('select * from mytable as m, sometable as s
-        where s.id=m.xcol',
-        'mytable',(x,y),('xcol','ycol'))
+    >>> sqlutilpy.local_join('''
+    ... SELECT s.* FROM mytable AS m LEFT JOIN sometable AS s
+    ... ON s.x = m.x ORDER BY m.xcol''',
+    ... 'mytable', (x, y), ('x', 'y'))
     """
 
     connSupplied = (conn is not None)

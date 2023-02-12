@@ -8,7 +8,9 @@ if  [ `git status --porcelain=v1 | grep -v '^??'|wc -l ` -eq 0 ] ; then echo 'Go
 echo "__version__ = '$VERSION'" > py/sqlutilpy/version.py
 git commit -m "New version $VERSION" -v  py/sqlutilpy/version.py
 git tag $VERSION
-rm -rf dist/*
-python setup.py sdist bdist_wheel
+rm -rf dist/
+rm -rf build/
+rm -rf py/sqlutilpy.egg-info
+python -m build --sdist --wheel
 twine check dist/*
 twine upload dist/*
