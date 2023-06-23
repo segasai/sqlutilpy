@@ -26,6 +26,7 @@ from io import BytesIO as StringIO
 import queue
 
 _WAIT_SELECT_TIMEOUT = 10
+STRLEN_DEFAULT = 20
 
 
 class config:
@@ -267,7 +268,7 @@ def get(query,
         preamb=None,
         conn=None,
         port=None,
-        strLength=20,
+        strLength=STRLEN_DEFAULT,
         timeout=None,
         notNamed=False,
         asDict=False,
@@ -725,7 +726,8 @@ def local_join(query,
                conn=None,
                preamb=None,
                timeout=None,
-               strLength=20,
+               strLength=STRLEN_DEFAULT,
+               intNullVal=-9999,
                asDict=False):
     """
     Join your local data in python with the data in the database
@@ -777,7 +779,8 @@ def local_join(query,
                   conn=conn,
                   preamb=preamb,
                   strLength=strLength,
-                  asDict=asDict)
+                  asDict=asDict,
+                  intNullVal=intNullVal)
     except BaseException:
         failure_cleanup(conn, connSupplied)
         raise
