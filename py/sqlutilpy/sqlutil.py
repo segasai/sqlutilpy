@@ -658,6 +658,9 @@ def upload(tableName,
 table/pandas/dictionary or provide a separate list of arrays and their names')
 
     arrays = [np.asarray(_) for _ in arrays]
+    if len(arrays) != len(names):
+        raise RuntimeError('The column names list must have the same '
+                           'length as array list')
     repl_char = {
         ' ': '_',
         '-': '_',
