@@ -6,7 +6,7 @@
 # sqlutilpy
 Python module to query SQL databases and return numpy arrays, upload
 tables and run join queries involving local arrays and the tables in the DB.
-The module only works with PostgreSQL and SQLite databases.
+The module only works with PostgreSQL, SQLite and DuckDB databases.
 
 The full documentation is available [here](http://sqlutilpy.readthedocs.io/en/latest/)
 
