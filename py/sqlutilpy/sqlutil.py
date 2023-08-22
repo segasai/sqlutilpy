@@ -141,6 +141,12 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
         cur = conn.cursor()
         if preamb is not None:
             cur.execute(preamb)
+    elif driver == 'duckdb':
+        cur = conn.cursor()
+        if preamb is not None:
+            cur.execute(preamb)
+    else:
+        raise SqlUtilException('unrecognized driver')
     return cur
 
 
@@ -422,6 +428,13 @@ def get(query,
                 res = numpy.concatenate(reslist)
 
         elif driver == 'sqlite3':
+            tups = cur.fetchall()
+            colNames = [_tmp[0] for _tmp in cur.description]
+            if len(tups) > 0:
+                res = numpy.core.records.array(tups)
+            else:
+                return [[]] * len(cur.description)
+        elif driver == 'duckdb':
             tups = cur.fetchall()
             colNames = [_tmp[0] for _tmp in cur.description]
             if len(tups) > 0:
