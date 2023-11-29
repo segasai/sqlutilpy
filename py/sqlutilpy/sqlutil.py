@@ -581,7 +581,6 @@ def __print_arrays(arrays, f, delimiter=' '):
             if x.dtype.type == np.object_:
                 array_mode = True
                 fmts.append(None)
-                break
             else:
                 raise RuntimeError(
                     'Unsupported column type %s. Please report' %

@@ -399,8 +399,8 @@ ARRAY[false,false]) ''', **self.kw)
         for i in range(1):
             if i == 0:
                 sqlutil.upload(
-                    mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xarr),
-                    ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xarr'),
+                    mytab, (xi32, xi64, xf32, xf64, xbool, xarr, xi16),
+                    ('xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xarr', 'xi16'),
                     **self.kw)
             yi16, yi32, yi64, yf32, yf64, ybool, yarr = sqlutil.get(
                 '''select xi16,xi32,xi64,xf32,xf64,xbool,xarr from %s''' %
