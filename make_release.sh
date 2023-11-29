@@ -11,6 +11,10 @@ git tag $VERSION
 rm -rf dist/
 rm -rf build/
 rm -rf py/sqlutilpy.egg-info
+TMPDIR=`mktemp -d`
+cp -r * $TMPDIR
+cd $TMPDIR
 python -m build --sdist --wheel
 twine check dist/*
 twine upload dist/*
+rm -rf $TMPDIR
