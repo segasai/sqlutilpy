@@ -598,6 +598,7 @@ def __print_arrays(arrays, f, delimiter=' '):
                 if fmts[i] is None:
                     curstr = np.array2string(
                         row[field],
+                        max_line_width=np.inf,
                         threshold=None,
                         separator=',',
                         formatter={'all': lambda x: str(x)})
