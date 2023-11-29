@@ -540,7 +540,9 @@ def execute(query,
 def __create_schema(tableName, arrays, names, temp=False):
     hash = dict([(np.int32, 'integer'), (np.int64, 'bigint'),
                  (np.uint64, 'bigint'), (np.int16, 'smallint'),
-                 (np.uint8, 'bigint'), (np.float32, 'real'),
+                 (np.uint8, 'smallint'),
+                 (np.int8, 'smallint'),
+                 (np.float32, 'real'),
                  (np.float64, 'double precision'), (np.string_, 'varchar'),
                  (np.str_, 'varchar'), (np.bool_, 'boolean'),
                  (np.datetime64, 'timestamp')])
