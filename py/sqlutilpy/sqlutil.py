@@ -596,9 +596,13 @@ def __print_arrays(arrays, f, delimiter=' '):
                 if i != 0:
                     f.write(delimiter.encode())
                 if fmts[i] is None:
-                    curstr = np.array2string(row[field],
-                                             threshold=None,
-                                             separator=',')
+                    curstr = np.array2string(
+                        row[field],
+                        threshold=None,
+                        separator=',',
+                        formatter={'all': lambda x: str(x)})
+                    # formatter is needed because otherwise there is
+                    # whitespace padding
                     curstr = '{' + curstr[1:-1] + '}'
                     f.write(curstr.encode())
                 else:
