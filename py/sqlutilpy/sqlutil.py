@@ -597,7 +597,7 @@ def __print_arrays(arrays, f, delimiter=' '):
                     f.write(delimiter.encode())
                 if fmts[i] is None:
                     curstr = np.array2string(row[field],
-                                             threshold=0,
+                                             threshold=None,
                                              separator=',')
                     curstr = '{' + curstr[1:-1] + '}'
                     f.write(curstr.encode())

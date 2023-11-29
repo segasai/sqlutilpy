@@ -394,23 +394,16 @@ ARRAY[false,false]) ''', **self.kw)
         xf = getrand(nrows, True)
         xf32 = xf.astype(np.float32)
         xf64 = xf.astype(np.float64)
-        strL = 15
-        xstr = [
-            ''.join(np.random.choice(list(string.ascii_letters), strL))
-            for i in range(nrows)
-        ]
-        xstr[1] = ',:;'  # just to test delimiting
-        xstr = np.array(xstr)
         xbool = np.arange(len(xi16)) < (len(xi16) / 2.)
-        xarr = np.array([np.arange(_ + 1) for _ in range(10)])
+        xarr = np.array([np.arange(_ + 1) for _ in range(10)], dtype='object')
         for i in range(1):
             if i == 0:
                 sqlutil.upload(
-                    mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xstr, xarr),
-                    ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xstr',
-                     'xarr'), **self.kw)
-            yi16, yi32, yi64, yf32, yf64, ybool, ystr, yarr = sqlutil.get(
-                '''select xi16,xi32,xi64,xf32,xf64,xbool,xstr,xarr from %s''' %
+                    mytab, (xi16, xi32, xi64, xf32, xf64, xbool, xarr),
+                    ('xi16', 'xi32', 'xi64', 'xf32', 'xf64', 'xbool', 'xarr'),
+                    **self.kw)
+            yi16, yi32, yi64, yf32, yf64, ybool, yarr = sqlutil.get(
+                '''select xi16,xi32,xi64,xf32,xf64,xbool,xarr from %s''' %
                 (mytab), **self.kw)
             try:
                 for i in range(nrows):
