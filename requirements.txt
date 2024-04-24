@@ -1,3 +1,0 @@
-numpy
-psycopg2-binary
-numpydoc

@@ -5,12 +5,12 @@ if  [ `git status --porcelain=v1 | grep -v '^??'|wc -l ` -eq 0 ] ; then echo 'Go
     echo "Uncommitted changes found";
     exit 1;
 } ; fi 
-echo "__version__ = '$VERSION'" > py/sqlutilpy/version.py
-git commit -m "New version $VERSION" -v  py/sqlutilpy/version.py
+echo "__version__ = '$VERSION'" > src/sqlutilpy/version.py
+git commit -m "New version $VERSION" -v  src/sqlutilpy/version.py
 git tag $VERSION
 rm -rf dist/
 rm -rf build/
-rm -rf py/sqlutilpy.egg-info
+rm -rf src/sqlutilpy.egg-info
 TMPDIR=`mktemp -d`
 cp -r * $TMPDIR
 cd $TMPDIR

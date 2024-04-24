@@ -1,0 +1,32 @@
+[project]
+name = "sqlutilpy"
+dynamic = ["version"] 
+description = "Database query code returning numpy arrays"
+authors = [
+    {name = "Sergey E. Koposov", email = "skoposov@ed.ac.uk"},
+]
+dependencies = [
+    "numpy",
+    "psycopg2-binary",
+    "numpydoc",
+]
+requires-python = ">=3.6"
+readme = "README.md"
+license = {text = "BSD"}
+keywords = ["numpy postgresql query sql sqlite array"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: BSD License",
+    "Topic :: Utilities",
+]
+
+[build-system]
+requires = ["setuptools", "wheel", "setuptools-git-versioning"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+[project.urls]
+Homepage = "https://github.com/segasai/sqlutilpy"
+
