@@ -9,9 +9,7 @@ dependencies = [
     "numpy",
     "psycopg[binary]",
     "numpydoc",
-    "numpy\n",
-    "numpydoc\n",
-    "psycopg[binary]\n",
+    "numpy\n"
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -24,7 +22,7 @@ classifiers = [
 ]
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools-git-versioning"]
+requires = ["setuptools", "wheel", "setuptools-git-versioning"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools-git-versioning]
@@ -32,3 +30,4 @@ enabled = true
 
 [project.urls]
 Homepage = "https://github.com/segasai/sqlutilpy"
+
