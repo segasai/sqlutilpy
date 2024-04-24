@@ -78,7 +78,11 @@ it uploads the data to the db and runs a query)
 Often it is beneficial to preserve an open connection to the database. You can do that if you first 
 obtain the connection using sqlutilpy.getConnection() and then provide it directly
 to sqlutil.get() and friends using conn=conn argument
-
+```python
+conn = sqlutilpy.getConnection(db='mydb', user='meuser', password='something', host='hostname')
+R= sqlutilpy.get('select 1', conn=conn)
+R1= sqlutilpy.get('select 1', conn=conn)
+```
 
 # How to cite the software
 
