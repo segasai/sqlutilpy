@@ -63,10 +63,11 @@ you could upload the arrays in the DB and run a query, but local_join function d
 
 ```python
 myid = np.arange(10)
-y = x**.5
+y = np.random.uniform(size=10)
+
 R=sqlutilpy.local_join('''select * from mytmptable as m, 
            somebigtable as s where s.id=m.myid order by m.myid''',                                              
-           'mytmptable',(x,y),('myid','ycol'))
+           'mytmptable',(myid, y),('myid','ycol'))
 ```
 
 It executes a query as if you arrays were in mytmptable. (behind the scenes
