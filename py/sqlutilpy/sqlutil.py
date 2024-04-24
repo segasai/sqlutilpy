@@ -3,13 +3,12 @@
 from __future__ import print_function
 import numpy
 import numpy as np
-import psycopg2
+import psycopg
 import threading
 import collections
 import warnings
 from numpy.core import numeric as sb
 from select import select
-from psycopg2.extensions import POLL_OK, POLL_READ, POLL_WRITE
 
 try:
     import astropy.table as atpy
@@ -35,31 +34,6 @@ class config:
 
 class SqlUtilException(Exception):
     pass
-
-
-def __wait_select_inter(conn):
-    """ Make the queries interruptible by Ctrl-C
-
-    Taken from http://initd.org/psycopg/articles/2014/07/20/cancelling-postgresql-statements-python/ # noqa
-    """
-    while True:
-        try:
-            state = conn.poll()
-            if state == POLL_OK:
-                break
-            elif state == POLL_READ:
-                select([conn.fileno()], [], [], _WAIT_SELECT_TIMEOUT)
-            elif state == POLL_WRITE:
-                select([], [conn.fileno()], [], _WAIT_SELECT_TIMEOUT)
-            else:
-                raise conn.OperationalError("bad state from poll: %s" % state)
-        except KeyboardInterrupt:
-            conn.cancel()
-            # the loop will be broken by a server error
-            continue
-
-
-psycopg2.extensions.set_wait_callback(__wait_select_inter)
 
 
 def getConnection(db=None,
@@ -110,7 +84,7 @@ def getConnection(db=None,
             conn_dict['user'] = user
         if password is not None:
             conn_dict['password'] = password
-        conn = psycopg2.connect(**conn_dict)
+        conn = psycopg.connect(**conn_dict)
     elif driver == 'sqlite3':
         import sqlite3
         if timeout is None:
@@ -744,17 +718,17 @@ table/pandas/dictionary or provide a separate list of arrays and their names')
         nsplit = 100000
         N = len(arrays[0])
         for i in range(0, N, nsplit):
-            f = StringIO()
-            __print_arrays([_[i:i + nsplit] for _ in arrays],
-                           f,
-                           delimiter=delimiter)
-            f.seek(0)
             try:
-                thread = psycopg2.extensions.get_wait_callback()
-                psycopg2.extensions.set_wait_callback(None)
-                cur.copy_from(f, tableName, sep=delimiter, columns=names)
+                names = ','.join(names)
+                with cur.copy(
+                        f'''copy {tableName}({names}) from stdin with delimiter '{delimiter}' '''
+                ) as copy:
+                    __print_arrays([_[i:i + nsplit] for _ in arrays],
+                                   copy,
+                                   delimiter=delimiter)
+
             finally:
-                psycopg2.extensions.set_wait_callback(thread)
+                pass
     except BaseException:
         failure_cleanup(conn, connSupplied)
         raise
