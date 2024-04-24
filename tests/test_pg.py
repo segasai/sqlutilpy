@@ -110,13 +110,14 @@ def test_execute_fail(setup):
         sqlutil.execute('create xtable;', **kw)
 
 
-def test_nocommit():
-    conn = getconn()
+def test_nocommit(setup):
+    kw, conn = setup
+    conn1 = getconn()
     sqlutil.execute('create unlogged table sqlutil_test1 (a int)', conn=conn)
     sqlutil.execute('insert into sqlutil_test1 values(1)', conn=conn)
     sqlutil.execute('insert into sqlutil_test1 values(2)',
                     noCommit=True,
-                    conn=conn)
+                    conn=conn1)
     cnt, = sqlutil.get('select count(*) from sqlutil_test1', conn=conn)
     assert (cnt[0] == 1)
     sqlutil.execute('drop table sqlutil_test1;', conn=conn)
