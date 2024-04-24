@@ -1,7 +1,7 @@
 import pytest
 import string
 import os
-import psycopg2
+import psycopg
 import numpy as np
 import sqlutilpy as sqlutil
 import time
@@ -37,8 +37,8 @@ def getconn():
 
 @pytest.fixture
 def setup():
-    conn = psycopg2.connect('dbname=%s user=%s host=%s password=%s' %
-                            (PG_DB, PG_USER, PG_HOST, PG_PASS))
+    conn = psycopg.connect('dbname=%s user=%s host=%s password=%s' %
+                           (PG_DB, PG_USER, PG_HOST, PG_PASS))
     cur = conn.cursor()
     cur.execute('''
     create unlogged table sqlutil_test (sicol smallint, intcol int,

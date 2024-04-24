@@ -8,7 +8,6 @@ import threading
 import collections
 import warnings
 from numpy.core import numeric as sb
-from select import select
 
 try:
     import astropy.table as atpy
@@ -21,7 +20,6 @@ except ImportError:
     # pandas is not installed
     pandas = None
 
-from io import BytesIO as StringIO
 import queue
 
 _WAIT_SELECT_TIMEOUT = 10
@@ -54,7 +52,7 @@ def getConnection(db=None,
         The name of the database (in case of PostgreSQL) or filename in
         case of sqlite db
     driver :  string
-        The db driver (either 'psycopg2' or 'sqlite3')
+        The db driver (either 'psycopg' or 'sqlite3')
     user : string, optional
         Username
     password: string, optional
@@ -73,6 +71,10 @@ def getConnection(db=None,
 
     """
     if driver == 'psycopg2':
+        warnings.warn(
+            'psycopg2 driver is not supported anymore using psycopg instead')
+        driver = 'psycopg'
+    if driver == 'psycopg':
         conn_dict = dict()
         if db is not None:
             conn_dict['dbname'] = db
@@ -100,6 +102,10 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
     Retrieve the database cursor
     """
     if driver == 'psycopg2':
+        warnings.warn(
+            'psycopg2 driver is not supported anymore using psycopg instead')
+        driver = 'psycopg'
+    if driver == 'psycopg':
         cur = conn.cursor()
         if preamb is not None:
             cur.execute(preamb)
@@ -241,7 +247,7 @@ def __getDType(row, typeCodes, strLength):
 def get(query,
         params=None,
         db="wsdb",
-        driver="psycopg2",
+        driver="psycopg",
         user=None,
         password=None,
         host=None,
@@ -278,7 +284,7 @@ def get(query,
     db : string
         The name of the database
     driver : string, optional
-        The sql driver to be used (psycopg2 or sqlite3)
+        The sql driver to be used (psycopg or sqlite3)
     user : string, optional
         User name for the DB connection
     password : string, optional
@@ -333,6 +339,11 @@ def get(query,
         proc = None
         colNames = []
         if driver == 'psycopg2':
+            warnings.warn(
+                'psycopg2 driver is not supported anymore using psycopg instead'
+            )
+            driver = 'psycopg'
+        if driver == 'psycopg':
             try:
                 while (True):
                     # Iterating over the cursor, retrieving batches of results
@@ -447,7 +458,7 @@ def get(query,
 def execute(query,
             params=None,
             db='wsdb',
-            driver="psycopg2",
+            driver="psycopg",
             user=None,
             password=None,
             host=None,
@@ -467,7 +478,7 @@ def execute(query,
     db : string
         Database name
     driver : string
-        Driver for the DB connection ('psycopg2' or 'sqlite3')
+        Driver for the DB connection ('psycopg' or 'sqlite3')
     user : string, optional
         user name for the DB connection
     password : string, optional
@@ -600,7 +611,7 @@ def upload(tableName,
            arrays,
            names=None,
            db="wsdb",
-           driver="psycopg2",
+           driver="psycopg",
            user=None,
            password=None,
            host=None,
@@ -627,7 +638,7 @@ def upload(tableName,
     db: string
          Databas name
     driver: string
-         Python database driver "psycopg2",
+         Python database driver "psycopg",
     user: string,
     password: string
     host: string
@@ -746,7 +757,7 @@ def local_join(query,
                arrays,
                names,
                db=None,
-               driver="psycopg2",
+               driver="psycopg",
                user=None,
                password=None,
                host=None,

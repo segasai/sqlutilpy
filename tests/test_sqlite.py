@@ -1,12 +1,7 @@
 import pytest
-import string
 import os
-import psycopg2
-import numpy as np
 import sqlutilpy as sqlutil
 import sqlite3
-import time
-import killer
 
 
 @pytest.fixture()
