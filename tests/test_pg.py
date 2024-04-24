@@ -114,7 +114,9 @@ def test_nocommit():
     conn = getconn()
     sqlutil.execute('create unlogged table sqlutil_test1 (a int)', conn=conn)
     sqlutil.execute('insert into sqlutil_test1 values(1)', conn=conn)
-    sqlutil.execute('insert into sqlutil_test1 values(2)', noCommit=True)
+    sqlutil.execute('insert into sqlutil_test1 values(2)',
+                    noCommit=True,
+                    conn=conn)
     cnt, = sqlutil.get('select count(*) from sqlutil_test1', conn=conn)
     assert (cnt[0] == 1)
     sqlutil.execute('drop table sqlutil_test1;', conn=conn)
