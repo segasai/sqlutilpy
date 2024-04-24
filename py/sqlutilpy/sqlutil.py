@@ -230,7 +230,7 @@ def __getDType(row, typeCodes, strLength):
         1022: 'f8',
         1700: 'f8',  # numeric
         1114: '<M8[us]',  # timestamp
-        1082: '<M8[us]',  # date 
+        1082: '<M8[us]',  # date
         25: '|U%d',
         1042: '|U%d',  # character()
         1043: '|U%d'  # varchar
@@ -540,10 +540,10 @@ def execute(query,
 def __create_schema(tableName, arrays, names, temp=False):
     hash = dict([(np.int32, 'integer'), (np.int64, 'bigint'),
                  (np.uint64, 'bigint'), (np.int16, 'smallint'),
-                 (np.uint8, 'bigint'), (np.float32, 'real'),
-                 (np.float64, 'double precision'), (np.string_, 'varchar'),
-                 (np.str_, 'varchar'), (np.bool_, 'boolean'),
-                 (np.datetime64, 'timestamp')])
+                 (np.uint8, 'smallint'), (np.int8, 'smallint'),
+                 (np.float32, 'real'), (np.float64, 'double precision'),
+                 (np.string_, 'varchar'), (np.str_, 'varchar'),
+                 (np.bool_, 'boolean'), (np.datetime64, 'timestamp')])
     if temp:
         temp = 'temporary'
     else:
@@ -551,7 +551,13 @@ def __create_schema(tableName, arrays, names, temp=False):
     outp = 'create %s table %s ' % (temp, tableName)
     outp1 = []
     for arr, name in zip(arrays, names):
-        outp1.append('"' + name + '" ' + hash[arr.dtype.type])
+        curtyp = arr.dtype.type
+        if curtyp == np.object_:
+            # array
+            curotyp = hash[arr[0].dtype.type] + '[]'
+        else:
+            curotyp = hash[arr.dtype.type]
+        outp1.append(f'"{name}" {curotyp}')
     return outp + '(' + ','.join(outp1) + ')'
 
 
@@ -560,13 +566,48 @@ def __print_arrays(arrays, f, delimiter=' '):
     print the input arrays into the open file separated by a delimiter
     """
     format_dict = dict([(np.int32, '%d'), (np.int64, '%d'), (np.int16, '%d'),
-                        (np.uint8, '%d'), (np.float32, '%.18e'),
-                        (np.float64, '%.18e'), (np.string_, '%s'),
-                        (np.str_, '%s'), (np.datetime64, '%s'),
-                        (np.bool_, '%d')])
-    fmt = [format_dict[x.dtype.type] for x in arrays]
+                        (np.int8, '%d'), (np.uint8, '%d'),
+                        (np.float32, '%.18e'), (np.float64, '%.18e'),
+                        (np.string_, '%s'), (np.str_, '%s'),
+                        (np.datetime64, '%s'), (np.bool_, '%d')])
+    fmts = []
+    array_mode = False
+    names = []
+    for i, x in enumerate(arrays):
+        names.append('f%d' % i)
+        if x.dtype.type in format_dict:
+            fmts.append(format_dict[x.dtype.type])
+        else:
+            if x.dtype.type == np.object_:
+                array_mode = True
+                fmts.append(None)
+            else:
+                raise RuntimeError(
+                    'Unsupported column type %s. Please report' %
+                    (x.dtype.type))
     recarr = np.rec.fromarrays(arrays)
-    np.savetxt(f, recarr, fmt=fmt, delimiter=delimiter)
+    if not array_mode:
+        np.savetxt(f, recarr, fmt=fmts, delimiter=delimiter)
+    else:
+        # this is really slow
+        for row in recarr:
+            for i, field in enumerate(names):
+                if i != 0:
+                    f.write(delimiter.encode())
+                if fmts[i] is None:
+                    curstr = np.array2string(
+                        row[field],
+                        max_line_width=np.inf,
+                        threshold=None,
+                        separator=',',
+                        formatter={'all': lambda x: str(x)})
+                    # formatter is needed because otherwise there is
+                    # whitespace padding
+                    curstr = '{' + curstr[1:-1] + '}'
+                    f.write(curstr.encode())
+                else:
+                    f.write(str(row[field]).encode())
+            f.write(b'\n')
 
 
 def failure_cleanup(conn, connSupplied):
