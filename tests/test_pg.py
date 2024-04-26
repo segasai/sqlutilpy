@@ -123,11 +123,14 @@ def test_nocommit(setup):
 
 def test_local_join(setup):
     kw, conn = setup
+    N = 1000
+    rands = np.random.uniform(size=N)
     R, = sqlutil.local_join(
         '''
-    select s.sicol from sqlutil_test as s,  mytab as m
-    where s.sicol = m.id''', 'mytab', [np.arange(10)], ['id'], **kw)
-    assert (len(R) == 1)
+    select xf from sqlutil_test as s,  mytab as m
+    where s.sicol = m.id''', 'mytab', [np.arange(N), rands], ['id', 'xf'],
+        **kw)
+    assert (len(R) == 2)
 
 
 def test_big(setup):
