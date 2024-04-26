@@ -16,7 +16,7 @@ PG_PASS = os.environ['SQLUTIL_TEST_PG_PASS']
 def getrand(N, float=False):
     # simple deterministic pseudo-random number generator
     a, c = 1103515245, 12345
-    m = 2 ^ 31
+    m = 2**31
     arr = np.zeros(N)
     arr[0] = 1
     for i in range(1, N):
