@@ -395,10 +395,27 @@ def test_upload(setup):
     # try the weird names
     sqlutil.upload(mytab1, (xi16, xi32, xi64, xf32, xf64, xbool),
                    ('xi 16', 'xi(32)', 'xi[64]', 'xf32', 'xf64', 'xbool'),
+                   temp=True,
                    **kw)
     yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
         '''select xi_16,xi_32_,xi_64_,xf32,xf64,xbool from %s''' % (mytab1),
         **kw)
+
+
+def test_upload_big(setup):
+    kw, conn = setup
+    mytab = 'sqlutil_test_tab_big'
+    nrows = 1_000_000
+    xi = np.arange(nrows, dtype=np.int32)
+    xf = getrand(nrows, True)
+    sqlutil.upload(mytab, (xi, xf), ('xi', 'xf'), **kw)
+    yi, yf = sqlutil.get('''select xi,xf from %s order by xi''' % (mytab),
+                         **kw)
+    try:
+        assert ((xi == yi).all())
+        assert (np.allclose(xf, yf))
+    finally:
+        sqlutil.execute('drop table %s' % mytab, **kw)
 
 
 def test_upload_array(setup):
