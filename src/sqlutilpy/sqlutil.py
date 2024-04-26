@@ -728,9 +728,9 @@ table/pandas/dictionary or provide a separate list of arrays and their names')
             cur.execute(query1)
         nsplit = 100000
         N = len(arrays[0])
+        names = ','.join(names)
         for i in range(0, N, nsplit):
             try:
-                names = ','.join(names)
                 with cur.copy(
                         f'''copy {tableName}({names}) from stdin with delimiter '{delimiter}' '''
                 ) as copy:
