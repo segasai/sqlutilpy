@@ -1,5 +1,9 @@
 Changelog
 
+# 0.23.0
+* Switch to psycopg (i.e. third version of psycopg)
+* Make the code compatible with numpy 2.0
+
 # 0.22.0
 * This version migrated to pyproject.toml
 
