@@ -527,7 +527,7 @@ def __create_schema(tableName, arrays, names, temp=False):
                  (np.uint64, 'bigint'), (np.int16, 'smallint'),
                  (np.uint8, 'smallint'), (np.int8, 'smallint'),
                  (np.float32, 'real'), (np.float64, 'double precision'),
-                 (np.string_, 'varchar'), (np.str_, 'varchar'),
+                 (np.bytes_, 'varchar'), (np.str_, 'varchar'),
                  (np.bool_, 'boolean'), (np.datetime64, 'timestamp')])
     if temp:
         temp = 'temporary'
@@ -553,7 +553,7 @@ def __print_arrays(arrays, f, delimiter=' '):
     format_dict = dict([(np.int32, '%d'), (np.int64, '%d'), (np.int16, '%d'),
                         (np.int8, '%d'), (np.uint8, '%d'),
                         (np.float32, '%.18e'), (np.float64, '%.18e'),
-                        (np.string_, '%s'), (np.str_, '%s'),
+                        (np.bytes_, '%s'), (np.str_, '%s'),
                         (np.datetime64, '%s'), (np.bool_, '%d')])
     fmts = []
     array_mode = False
