@@ -12,9 +12,9 @@ rm -rf dist/
 rm -rf build/
 rm -rf src/sqlutilpy.egg-info
 TMPDIR=`mktemp -d`
-cp -r * $TMPDIR
+cp -r * .??* $TMPDIR
 cd $TMPDIR
 python -m build --sdist --wheel
 twine check dist/*
-twine upload dist/*
-rm -rf $TMPDIR
+echo "Now execute twine upload $TMPDIR/dist/*"
+echo "rm -rf $TMPDIR"
