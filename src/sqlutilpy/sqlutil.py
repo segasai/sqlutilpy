@@ -140,12 +140,12 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
     """
 
     shape = None
-    descr = sb.dtype((np.core.records.record, dtype))
+    descr = sb.dtype((np.record, dtype))
     try:
         retval = sb.array(recList, dtype=descr)
     except TypeError:  # list of lists instead of list of tuples
         shape = (len(recList), )
-        _array = np.core.records.recarray(shape, descr)
+        _array = np.recarray(shape, descr)
         try:
             for k in range(_array.size):
                 _array[k] = tuple(recList[k])
@@ -173,7 +173,7 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
         if shape is not None and retval.shape != shape:
             retval.shape = shape
 
-    res = retval.view(numpy.core.records.recarray)
+    res = retval.view(numpy.recarray)
 
     return res
 
@@ -426,14 +426,14 @@ def get(query,
             tups = cur.fetchall()
             colNames = [_tmp[0] for _tmp in cur.description]
             if len(tups) > 0:
-                res = numpy.core.records.array(tups)
+                res = numpy.rec.array(tups)
             else:
                 return [[]] * len(cur.description)
         elif driver == 'duckdb':
             tups = cur.fetchall()
             colNames = [_tmp[0] for _tmp in cur.description]
             if len(tups) > 0:
-                res = numpy.core.records.array(tups)
+                res = numpy.rec.array(tups)
             else:
                 return [[]] * len(cur.description)
 
