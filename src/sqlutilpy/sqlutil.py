@@ -92,6 +92,9 @@ def getConnection(db=None,
         if timeout is None:
             timeout = 5
         conn = sqlite3.connect(db, timeout=timeout)
+    elif driver == 'duckdb':
+        import duckdb
+        conn = duckdb.connect(db)
     else:
         raise Exception("Unknown driver")
     return conn
