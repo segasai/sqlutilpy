@@ -339,13 +339,12 @@ def get(query,
         proc = None
         colNames = []
         if driver == 'psycopg2':
-            warnings.warn(
-                'psycopg2 driver is not supported anymore using psycopg instead'
-            )
+            warnings.warn('psycopg2 driver is not supported anymore. '
+                          'We using psycopg instead')
             driver = 'psycopg'
         if driver == 'psycopg':
             try:
-                while (True):
+                while True:
                     # Iterating over the cursor, retrieving batches of results
                     # and then sending them for conversion
                     tups = cur.fetchmany()
@@ -738,9 +737,8 @@ table/pandas/dictionary or provide a separate list of arrays and their names')
         names = ','.join(names)
         for i in range(0, N, nsplit):
             try:
-                with cur.copy(
-                        f'''copy {tableName}({names}) from stdin with delimiter '{delimiter}' '''
-                ) as copy:
+                with cur.copy(f'''copy {tableName}({names}) from stdin
+                        with delimiter '{delimiter}' ''') as copy:
                     __print_arrays([_[i:i + nsplit] for _ in arrays],
                                    copy,
                                    delimiter=delimiter)
