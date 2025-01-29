@@ -356,13 +356,14 @@ def get(query,
                     if nrec == 0:
                         typeCodes = [_tmp.type_code for _tmp in desc]
                         colNames = [_tmp.name for _tmp in cur.description]
-                        if no_results:
-                            dtype = __getDType([None] * len(typeCodes),
-                                               typeCodes, strLength)
 
                     # No more data
                     if no_results:
+                        dtype = __getDType([None] * len(typeCodes), typeCodes,
+                                           strLength)
                         break
+
+                    dtype = __getDType(tups[0], typeCodes, strLength)
 
                     # Send the new batch for conversion
                     qIn.put(tups)
