@@ -31,6 +31,7 @@ jobs:
       - name: PG setup
         run: |
           sudo -u postgres psql -c "create role testuser with login password 'testpassword';" postgres
+          sudo -u postgres psql -c "GRANT CREATE ON SCHEMA public TO PUBLIC;" postgres
       - name: Test sqlutilpy
         run: |
           export SQLUTIL_TEST_PG_DB='postgres'
