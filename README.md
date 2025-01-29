@@ -6,8 +6,8 @@
 # sqlutilpy
 Python module to query SQL databases and return numpy arrays, upload
 tables and run join queries involving local arrays and the tables in the DB.
-This module is optimized to be able to deal efficiently with query results with millions of rows.
-The module only works with PostgreSQL, SQLite and DuckDB databases.
+This module is optimized to deal efficiently with query results with millions of rows.
+The module works with PostgreSQL, SQLite and DuckDB databases.
 
 The full documentation is available [here](http://sqlutilpy.readthedocs.io/en/latest/)
 
@@ -21,8 +21,9 @@ pip install sqlutilpy
 ```
 ## Authentication
 
-Throughout this readme, I will assume that the .pgpass file ( https://www.postgresql.org/docs/11/libpq-pgpass.html ) 
-has been created with your login/password details for Postgresql. If that is not the case, all of the 
+Throughout this readme, I will assume that if you are using PostgreSQL, then
+the .pgpass file ( https://www.postgresql.org/docs/11/libpq-pgpass.html ) 
+has been created with your login/password details for Postgresql. If that is not the case, many of the 
 commands given below will also need user='....' and password='...' options
 
 ## Connection information
