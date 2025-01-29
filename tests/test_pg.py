@@ -255,6 +255,12 @@ def test_get_dict(setup):
                      **kw)
     for i, k in enumerate(cols.split(',')):
         assert ((Rd[k] == R0[i]).all())
+    Rempty = sqlutil.get('select %s from sqlutil_test where sicol<-10000' %
+                         (cols, ),
+                         asDict=True,
+                         **kw)
+    for i, k in enumerate(cols.split(',')):
+        assert k in Rempty
 
 
 def test_get_dict_rep(setup):

@@ -351,8 +351,18 @@ def get(query,
                     tups = cur.fetchmany()
                     desc = cur.description
 
+                    # If the is just the start we need to launch the
+                    # thread doing the conversion
+                    no_results = tups == []
+                    if nrec == 0:
+                        typeCodes = [_tmp.type_code for _tmp in desc]
+                        colNames = [_tmp.name for _tmp in cur.description]
+                        if no_results:
+                            dtype = __getDType([None] * len(typeCodes),
+                                               typeCodes, strLength)
+
                     # No more data
-                    if tups == []:
+                    if no_results:
                         break
 
                     # Send the new batch for conversion
@@ -361,9 +371,6 @@ def get(query,
                     # If the is just the start we need to launch the
                     # thread doing the conversion
                     if nrec == 0:
-                        typeCodes = [_tmp.type_code for _tmp in desc]
-                        colNames = [_tmp.name for _tmp in cur.description]
-                        dtype = __getDType(tups[0], typeCodes, strLength)
                         proc = threading.Thread(target=__converter,
                                                 args=(qIn, qOut, endEvent,
                                                       dtype, intNullVal))
