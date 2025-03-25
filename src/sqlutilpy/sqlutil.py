@@ -213,6 +213,7 @@ def __getDType(row, typeCodes, strLength):
         1022: 'f8',
         1700: 'f8',  # numeric
         1114: '<M8[us]',  # timestamp
+        1184: '<M8[us]',  # timestamp with timezone
         1082: '<M8[us]',  # date
         25: '|U%d',
         1042: '|U%d',  # character()
