@@ -1,5 +1,12 @@
 Changelog
 
+# 0.25.0
+* Allow querying timestamp with timezone types
+* Allow sqlutilpy.connect() to the duckdb db
+
+# 0.24.0
+* In the case sqlutilpy.get() returns no rows and asDict=True, the column names will still be there
+
 # 0.23.0
 * Switch to psycopg (i.e. third version of psycopg)
 * Make the code compatible with numpy 2.0
