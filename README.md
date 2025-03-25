@@ -24,11 +24,11 @@ pip install sqlutilpy
 Throughout this readme, I will assume that if you are using PostgreSQL, then
 the .pgpass file ( https://www.postgresql.org/docs/11/libpq-pgpass.html ) 
 has been created with your login/password details for Postgresql. If that is not the case, many of the 
-commands given below will also need user='....' and password='...' options
+commands given below will also need user='....' and password='...' options.
 
 ## Connection information
 
-Most of the sqlutilpy commands require hostname, database name, user etc. 
+Most of the `sqlutilpy` commands require hostname, database name.  
 If you don't want to always type it, you can use standard PostgreSQL environment variables
 like PGPORT, PGDATABASE, PGUSER, PGHOST for the port, database name, user name and hostname
 of the connection. 
@@ -36,7 +36,8 @@ of the connection.
 
 ## Querying the database and retrieving the results
 
-This command will run the query and put the columns into variables ra,dec
+This command will run the query and put the columns into variables ra,dec:
+
 ```python
 import sqlutilpy
 ra,dec = squtilpy.get('select ra,dec from mytable', 
@@ -44,23 +45,28 @@ ra,dec = squtilpy.get('select ra,dec from mytable',
                  db='THE_NAME_OF_MY_DB')
 ```
 
-By default sqlutilpy.get executes the query and returns the tuple with 
-results. You can return the results as dictionary using asDict option.
+By default `sqlutilpy.get` executes the query and returns the tuple with 
+arrays. One array for each column in the query result. 
+You can return the results as dictionary using `asDict` option.
 
 ## Uploading your arrays as column in a table
+
+You can use `sqlutilpy.upload` to upload your arrays as columns in a table.
 
 ```python
 x = np.arange(10)                                                   
 y = x**.5                                                           
 sqlutilpy.upload('mytable',(x,y),('xcol','ycol'))    
 ``` 
-This will create a table called mytable with columns xcol and ycol 
+This will create a table called `mytable` with columns `xcol` and `ycol` 
 
 ## Join query involving your local data and the database table
 
-Imagine you have arrays myid and y and you want to to extract all the 
-information from somebigtable for objects with id=myid. In principle
-you could upload the arrays in the DB and run a query, but local_join function does that for you.
+Sometimes it is beneficial to run a join query involving your local data and the data in the database.
+
+Imagine you have arrays `myid` and `y` and you want to extract all the 
+information from `somebigtable` for objects with `id=myid`. In principle,
+you could upload the arrays in the DB and run a query, but `local_join` function does that for you.
 
 ```python
 myid = np.arange(10)
@@ -71,15 +77,14 @@ R=sqlutilpy.local_join('''select * from mytmptable as m,
            'mytmptable',(myid, y),('myid','ycol'))
 ```
 
-It executes a query as if you arrays were in mytmptable. (behind the scenes
-it uploads the data to the db and runs a query)
+It executes a query as if your arrays were in `mytmptable`. What happens behind the scenes
+is that it uploads the data to the database and runs a query against it.
 
 ## Keeping the connection open. 
 
 Often it is beneficial to preserve an open connection to the database. You can do that if you first 
-obtain the connection using sqlutilpy.getConnection() and then provide it directly
-to sqlutil.get() and friends using conn=conn argument
-```python
+obtain the connection using `sqlutilpy.getConnection()` and then provide it directly
+to `sqlutil.get()` and similar commands using `conn=` keyword:
 conn = sqlutilpy.getConnection(db='mydb', user='meuser', password='something', host='hostname')
 R= sqlutilpy.get('select 1', conn=conn)
 R1= sqlutilpy.get('select 1', conn=conn)
@@ -87,5 +92,5 @@ R1= sqlutilpy.get('select 1', conn=conn)
 
 # How to cite the software
 
-If you use this package, please cite it through zenodo https://doi.org/10.5281/zenodo.6867957
+If you use this package, please cite it through Zenodo https://doi.org/10.5281/zenodo.5160118
 
