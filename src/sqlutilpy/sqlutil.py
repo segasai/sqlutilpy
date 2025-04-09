@@ -411,7 +411,8 @@ def get(query,
                     proc.join(0.2)
                     # in the converter process
                     if proc.is_alive():
-                        proc.terminate()
+                        # could not kill
+                        pass
                 raise
             if proc is not None:
                 proc.join()
