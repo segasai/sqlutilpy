@@ -7,7 +7,6 @@ import psycopg
 import threading
 import collections
 import warnings
-from numpy.core import numeric as sb
 
 try:
     import astropy.table as atpy
@@ -140,9 +139,9 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
     """
 
     shape = None
-    descr = sb.dtype((np.record, dtype))
+    descr = np.dtype((np.record, dtype))
     try:
-        retval = sb.array(recList, dtype=descr)
+        retval = np.array(recList, dtype=descr)
     except TypeError:  # list of lists instead of list of tuples
         shape = (len(recList), )
         _array = np.recarray(shape, descr)
