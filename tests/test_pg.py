@@ -340,12 +340,12 @@ def test_upload(setup):
         'xi32': xi32,
         'xi64': xi64,
         'xf32': xf32,
-        'xf64': xf64,
+        'XF64': xf64,  # one uppercase
         'xbool': xbool
     })
     sqlutil.upload(mytab, astroTab, **kw)
     yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
-        '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab), **kw)
+        '''select xi16,xi32,xi64,xf32,"XF64",xbool from %s''' % (mytab), **kw)
     try:
         assert ((xi16 == yi16).all())
         assert ((xi32 == yi32).all())
