@@ -357,7 +357,7 @@ def test_upload(setup):
         sqlutil.execute('drop table %s' % mytab, **kw)
     sqlutil.upload(mytab, astroTab.to_pandas(), **kw)
     yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
-        '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab), **kw)
+        '''select xi16,xi32,xi64,xf32,"XF64",xbool from %s''' % (mytab), **kw)
     try:
         assert ((xi16 == yi16).all())
         assert ((xi32 == yi32).all())
