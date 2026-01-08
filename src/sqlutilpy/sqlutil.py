@@ -108,7 +108,7 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
             'psycopg2 driver is not supported anymore using psycopg instead')
         driver = 'psycopg'
     if driver == 'psycopg':
-        cur = conn.cursor()
+        cur = conn.cursor(scrollable=False)
         if preamb is not None:
             cur.execute(preamb)
         else:

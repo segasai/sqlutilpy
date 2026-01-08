@@ -1,5 +1,12 @@
 Changelog
 
+# 0.27.0
+* Allow parallel plans for sqlutilpy.get. This can significantly speed up some queries. Previously in some case they were impossible due to cursor not explicitly marked 'not-scrollable'
+
+# 0.26.0
+* Preserve uppercase columns when ingestng data
+* Remove obsolet numpy functionality
+
 # 0.25.0
 * Allow querying timestamp with timezone types
 * Allow sqlutilpy.connect() to the duckdb db
