@@ -228,6 +228,32 @@ def __getDType(row, typeCodes, strLength):
     return dtype
 
 
+def __get_representative_row(batch, type_codes):
+    """
+    Scans the batch to find the maximum length of string columns and returns
+    a representative row (based on the first row) with those maximum lengths.
+    This ensures that __getDType determines the correct string length for the array.
+    """
+    first_row = list(batch[0])
+    strTypes = [25, 1042, 1043]
+
+    for i, type_code in enumerate(type_codes):
+        if type_code in strTypes:
+            max_len = 0
+            found = False
+            for row in batch:
+                val = row[i]
+                if val is not None:
+                    max_len = max(max_len, len(val))
+                    found = True
+            if found:
+                # Update representative row with max length string
+                # __getDType uses max(strLength, len(val))
+                if first_row[i] is None or len(first_row[i]) < max_len:
+                    first_row[i] = 'x' * max_len
+    return first_row
+
+
 def get(query,
         params=None,
         db="wsdb",
@@ -369,7 +395,9 @@ def get(query,
                     # if the first batch had Nulls
                     if isinstance(batch, tuple):
                         batch = list(batch)
-                    dtype = __getDType(batch[0], type_codes, strLength)
+
+                    first_row = __get_representative_row(batch, type_codes)
+                    dtype = __getDType(first_row, type_codes, strLength)
                     return __fromrecords(batch,
                                          dtype=dtype,
                                          intNullVal=intNullVal)

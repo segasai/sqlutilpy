@@ -110,13 +110,14 @@ def test_execute_fail(setup):
         sqlutil.execute('create xtable;', **kw)
 
 
-def test_nocommit(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_nocommit(setup, batched):
     kw, conn = setup
     sqlutil.execute('create unlogged table sqlutil_test1 (a int)', conn=conn)
     sqlutil.execute('insert into sqlutil_test1 values(1)', conn=conn)
     sqlutil.execute('insert into sqlutil_test1 values(2)', noCommit=True, **kw)
 
-    cnt, = sqlutil.get('select count(*) from sqlutil_test1', conn=conn)
+    cnt, = sqlutil.get('select count(*) from sqlutil_test1', batched=batched, conn=conn)
     assert (cnt[0] == 1)
     sqlutil.execute('drop table sqlutil_test1;', conn=conn)
 
@@ -133,7 +134,8 @@ def test_local_join(setup):
     assert (len(R) == 2)
 
 
-def test_big(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_big(setup, batched):
     conn = getconn()
     sqlutil.execute(
         '''create temp table sqlutil_test_big (a int, b double precision);
@@ -142,7 +144,7 @@ def test_big(setup):
     ''',
         conn=conn)
 
-    a, b = sqlutil.get('select a,b from sqlutil_test_big;', conn=conn)
+    a, b = sqlutil.get('select a,b from sqlutil_test_big;', batched=batched, conn=conn)
     sqlutil.execute('drop table sqlutil_test_big;', conn=conn)
     assert (len(a) == 10000000)
 
@@ -161,42 +163,48 @@ def notest_big_interrupt():
     assert ((t2 - t1) < 5)  # check interrupting work
 
 
-def test_NoResults(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_NoResults(setup, batched):
     kw, conn = setup
-    a, b = sqlutil.get('select 1, 2 where 2<1', **kw)
+    a, b = sqlutil.get('select 1, 2 where 2<1', batched=batched, **kw)
     assert (len(a) == 0)
 
 
-def test_params(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_params(setup, batched):
     kw, conn = setup
     xid = 5
     a, b = sqlutil.get(
         '''
     select * from (values (0,1),(10,20)) as x where column1<%s;''', (xid, ),
-        **kw)
+        batched=batched, **kw)
     assert (len(a) == 1)
 
 
-def test_Preamb(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_Preamb(setup, batched):
     kw, conn = setup
     a, b = sqlutil.get('select 1, 2 where 2<1',
                        preamb='set enable_seqscan to off',
+                       batched=batched,
                        **kw)
     assert (len(a) == 0)
 
 
-def test_StringFirstNull(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_StringFirstNull(setup, batched):
     kw, conn = setup
-    a, = sqlutil.get(''' values(NULL), ('abcdef')''', **kw)
+    a, = sqlutil.get(''' values(NULL), ('abcdef')''', batched=batched, **kw)
     assert (len(a) == 2)
     assert (a[1] == 'abcdef')
 
 
-def test_get(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_get(setup, batched):
     kw, conn = setup
     a, b, c, d, e, f, g = sqlutil.get(
         '''select sicol,intcol,bigicol,realcol,dpcol,textcol,boolcol
-        from sqlutil_test order by sicol''', **kw)
+        from sqlutil_test order by sicol''', batched=batched, **kw)
     assert ((a == np.array([1, 11])).all())
     assert ((b == np.array([2, 12])).all())
     assert ((c == np.array([3, 13])).all())
@@ -206,26 +214,29 @@ def test_get(setup):
     assert ((g == np.array([True, False])).all())
 
 
-def test_Null(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_Null(setup, batched):
     kw, conn = setup
-    a, b = sqlutil.get('values ( 1, 2.) , ( NULL, NULL) ', **kw)
+    a, b = sqlutil.get('values ( 1, 2.) , ( NULL, NULL) ', batched=batched, **kw)
     assert (np.isnan(b[1]))
     assert (a[1] == -9999)
-    a, b = sqlutil.get('values (NULL,NULL), ( 1, 2.)', **kw)
+    a, b = sqlutil.get('values (NULL,NULL), ( 1, 2.)', batched=batched, **kw)
     assert (np.isnan(b[0]))
     assert (a[0] == -9999)
 
 
-def test_Array(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_Array(setup, batched):
     kw, conn = setup
-    a, b = sqlutil.get('values ( ARRAY[1,2], 2.) , ( ARRAY[3,4], 3.) ', **kw)
+    a, b = sqlutil.get('values ( ARRAY[1,2], 2.) , ( ARRAY[3,4], 3.) ', batched=batched, **kw)
     assert (a[0][0] == 1)
     assert (a[0][1] == 2)
     assert (a[1][0] == 3)
     assert (a[1][1] == 4)
 
 
-def test_Array2(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_Array2(setup, batched):
     kw, conn = setup
     a, b, c, d, e, f = sqlutil.get(
         '''values ( ARRAY[1::int,2::int],ARRAY[11::real,12::real],
@@ -235,7 +246,7 @@ def test_Array2(setup):
         ( ARRAY[3::int,4::int], ARRAY[13::real,14::real],
         ARRAY[23::double precision, 24::double precision],
         ARRAY[33::smallint, 34::smallint], ARRAY[43::bigint, 44::bigint],
-        ARRAY[false,false]) ''', **kw)
+        ARRAY[false,false]) ''', batched=batched, **kw)
     assert (a[0][0] == 1)
     assert (b[0][0] == 11)
     assert (c[0][0] == 21)
@@ -245,50 +256,58 @@ def test_Array2(setup):
     assert (not f[1][0])
 
 
-def test_get_dict(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_get_dict(setup, batched):
     kw, conn = setup
     cols = 'sicol,intcol,bigicol,realcol,dpcol,textcol'
     R0 = sqlutil.get('select %s from sqlutil_test order by sicol' % (cols, ),
-                     **kw)
+                     batched=batched, **kw)
     Rd = sqlutil.get('select %s from sqlutil_test order by sicol' % (cols, ),
                      asDict=True,
+                     batched=batched,
                      **kw)
     for i, k in enumerate(cols.split(',')):
         assert ((Rd[k] == R0[i]).all())
     Rempty = sqlutil.get('select %s from sqlutil_test where sicol<-10000' %
                          (cols, ),
                          asDict=True,
+                         batched=batched,
                          **kw)
     for i, k in enumerate(cols.split(',')):
         assert k in Rempty
 
 
-def test_get_dict_rep(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_get_dict_rep(setup, batched):
     kw, conn = setup
     cols = 'sicol,sicol'
     R0 = sqlutil.get('select %s from sqlutil_test order by sicol' % (cols, ),
                      asDict=True,
+                     batched=batched,
                      **kw)
     assert (len(R0) == 2)
 
 
-def test_error(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_error(setup, batched):
     kw, conn = setup
     with pytest.raises(Exception):
-        sqlutil.get('select 1/0 from sqlutil_test '**kw)
+        sqlutil.get('select 1/0 from sqlutil_test ', batched=batched, **kw)
 
 
-def test_error1(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_error1(setup, batched):
     kw, conn = setup
     with pytest.raises(sqlutil.SqlUtilException):
-        sqlutil.get('''select '1'::bytea from sqlutil_test ''', **kw)
+        sqlutil.get('''select '1'::bytea from sqlutil_test ''', batched=batched, **kw)
 
 
 def test_version():
     sqlutil.__version__
 
 
-def test_upload(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_upload(setup, batched):
     kw, conn = setup
     mytab = 'sqlutil_test_tab'
     nrows = 10
@@ -321,7 +340,7 @@ def test_upload(setup):
                 **kw)
         yi16, yi32, yi64, yf32, yf64, ybool, ystr = sqlutil.get(
             '''select xi16,xi32,xi64,xf32,xf64,xbool,xstr from %s''' % (mytab),
-            **kw)
+            batched=batched, **kw)
         try:
             assert ((xi16 == yi16).all())
             assert ((xi32 == yi32).all())
@@ -345,7 +364,7 @@ def test_upload(setup):
     })
     sqlutil.upload(mytab, astroTab, **kw)
     yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
-        '''select xi16,xi32,xi64,xf32,"XF64",xbool from %s''' % (mytab), **kw)
+        '''select xi16,xi32,xi64,xf32,"XF64",xbool from %s''' % (mytab), batched=batched, **kw)
     try:
         assert ((xi16 == yi16).all())
         assert ((xi32 == yi32).all())
@@ -357,7 +376,7 @@ def test_upload(setup):
         sqlutil.execute('drop table %s' % mytab, **kw)
     sqlutil.upload(mytab, astroTab.to_pandas(), **kw)
     yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
-        '''select xi16,xi32,xi64,xf32,"XF64",xbool from %s''' % (mytab), **kw)
+        '''select xi16,xi32,xi64,xf32,"XF64",xbool from %s''' % (mytab), batched=batched, **kw)
     try:
         assert ((xi16 == yi16).all())
         assert ((xi32 == yi32).all())
@@ -378,7 +397,7 @@ def test_upload(setup):
             'xbool': xbool
         }, **kw)
     yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
-        '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab), **kw)
+        '''select xi16,xi32,xi64,xf32,xf64,xbool from %s''' % (mytab), batched=batched, **kw)
     try:
         assert ((xi16 == yi16).all())
         assert ((xi32 == yi32).all())
@@ -405,10 +424,11 @@ def test_upload(setup):
                    conn=conn)
     yi16, yi32, yi64, yf32, yf64, ybool = sqlutil.get(
         '''select xi_16,xi_32_,xi_64_,xf32,xf64,xbool from %s''' % (mytab1),
-        conn=conn)
+        batched=batched, conn=conn)
 
 
-def test_upload_big(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_upload_big(setup, batched):
     kw, conn = setup
     mytab = 'sqlutil_test_tab_big'
     nrows = 1_000_000
@@ -416,7 +436,7 @@ def test_upload_big(setup):
     xf = getrand(nrows, True)
     sqlutil.upload(mytab, (xi, xf), ('xi', 'xf'), **kw)
     yi, yf = sqlutil.get('''select xi,xf from %s order by xi''' % (mytab),
-                         **kw)
+                         batched=batched, **kw)
     try:
         assert ((xi == yi).all())
         assert (np.allclose(xf, yf))
@@ -424,7 +444,8 @@ def test_upload_big(setup):
         sqlutil.execute('drop table %s' % mytab, **kw)
 
 
-def test_upload_array(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_upload_array(setup, batched):
     kw, conn = setup
     mytab = 'sqlutil_test_tab'
     nrows = 10
@@ -444,7 +465,7 @@ def test_upload_array(setup):
                 **kw)
         yi16, yi32, yi64, yf32, yf64, ybool, yarr = sqlutil.get(
             '''select xi16,xi32,xi64,xf32,xf64,xbool,xarr from %s''' % (mytab),
-            **kw)
+            batched=batched, **kw)
         try:
             for i in range(nrows):
                 assert (np.all(xarr[i] == yarr[i]))
@@ -452,7 +473,8 @@ def test_upload_array(setup):
             sqlutil.execute('drop table %s' % mytab, **kw)
 
 
-def test_batch_none_mixed(setup):
+@pytest.mark.parametrize("batched", [True, False])
+def test_batch_none_mixed(setup, batched):
     kw, conn = setup
     from sqlutilpy import sqlutil as sqlutil_mod
     # Force small batch size to ensure multiple batches
@@ -488,7 +510,7 @@ def test_batch_none_mixed(setup):
         ''', (long_str, ),
                         conn=conn)
 
-        s, f, i = sqlutil.get('select s, f, i from test_batch_none', conn=conn)
+        s, f, i = sqlutil.get('select s, f, i from test_batch_none', batched=batched, conn=conn)
 
         # Check if the string was truncated
         # s[5] corresponds to the first row of the second batch
@@ -499,3 +521,36 @@ def test_batch_none_mixed(setup):
     finally:
         sqlutil.execute('drop table if exists test_batch_none', conn=conn)
         sqlutil_mod.config.arraysize = old_arraysize
+
+
+@pytest.mark.parametrize("batched", [True, False])
+def test_string_growth(setup, batched):
+    kw, conn = setup
+    table_name = "test_string_growth"
+    sqlutil.execute(f"create unlogged table {table_name} (id int, s text)", conn=conn)
+    
+    try:
+        # Generate data: 30 rows, length 1 to 30.
+        # id is used for ordering.
+        for i in range(1, 31):
+            s_val = 'x' * i
+            sqlutil.execute(f"insert into {table_name} values (%s, %s)", (i, s_val), conn=conn)
+            
+        # We use strLength=1 to strictly test the scanning logic.
+        # If scanning works, it should detect the max length in the batch.
+        
+        ids, strs = sqlutil.get(f"select id, s from {table_name} order by id", 
+                                conn=conn, 
+                                batched=batched, 
+                                strLength=1)
+        
+        assert len(ids) == 30
+        for i in range(30):
+            expected_len = i + 1
+            # Check length
+            assert len(strs[i]) == expected_len, f"Row {i+1} truncated. Expected len {expected_len}, got {len(strs[i])}"
+            # Check content
+            assert strs[i] == 'x' * expected_len
+            
+    finally:
+        sqlutil.execute(f"drop table if exists {table_name}", conn=conn)
