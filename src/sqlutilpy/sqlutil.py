@@ -8,32 +8,6 @@ import warnings
 import concurrent.futures
 
 try:
-    from itertools import batched
-except ImportError:
-    batched = None
-
-
-def chunk_list(data, chunk_size):
-    """
-    Splits a list into chunks of approximate size.
-
-    - Uses itertools.batched (Python 3.12+) if available for max efficiency.
-    - Falls back to generator slicing for older Python versions.
-    """
-    if batched:
-        # Approach 1: Python 3.12+ (Yields Tuples)
-        return batched(data, chunk_size)
-    else:
-        # Approach 2: Fallback Generator (Yields Lists)
-        # Note: Slicing creates a shallow copy of the list structure.
-        def _fallback_gen():
-            for i in range(0, len(data), chunk_size):
-                yield data[i:i + chunk_size]
-
-        return _fallback_gen()
-
-
-try:
     import astropy.table as atpy
 except ImportError:
     # astropy is not installed
@@ -315,8 +289,6 @@ def get(query,
         needed to store the results, but with the benefit of faster query
         execution, because these queries use PostgreSQL parallelism and thus
         be ~ a factor of few faster
-    nthreads: int, optional
-        
     Returns
     -------
     ret : Tuple or dictionary
@@ -368,7 +340,6 @@ def get(query,
                 first_batch = cur.fetchmany(config.arraysize)
             else:
                 first_batch = cur.fetchall()
-                print('done')
             desc = cur.description
 
             # Check if we have description
@@ -396,6 +367,8 @@ def get(query,
                     # Determine dtype from the first row of the current batch
                     # This allows adapting to string lengths in later batches
                     # if the first batch had Nulls
+                    if isinstance(batch, tuple):
+                        batch = list(batch)
                     dtype = __getDType(batch[0], type_codes, strLength)
                     return __fromrecords(batch,
                                          dtype=dtype,
@@ -416,16 +389,7 @@ def get(query,
                             executor.map(process_batch,
                                          batch_iter(first_batch)))
                 else:
-                    if len(first_batch) > config.arraysize:
-                        with concurrent.futures.ThreadPoolExecutor(
-                                max_workers=nthreads) as executor:
-                            results_list = list(
-                                executor.map(
-                                    process_batch,
-                                    chunk_list(first_batch, config.arraysize)))
-                    else:
-                        results_list = [process_batch(first_batch)]
-
+                    results_list = [process_batch(first_batch)]
                 # Check if results_list is valid
                 if results_list:
                     res = numpy.concatenate(results_list)
