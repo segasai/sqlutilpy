@@ -450,3 +450,52 @@ def test_upload_array(setup):
                 assert (np.all(xarr[i] == yarr[i]))
         finally:
             sqlutil.execute('drop table %s' % mytab, **kw)
+
+
+def test_batch_none_mixed(setup):
+    kw, conn = setup
+    from sqlutilpy import sqlutil as sqlutil_mod
+    # Force small batch size to ensure multiple batches
+    old_arraysize = sqlutil_mod.config.arraysize
+    sqlutil_mod.config.arraysize = 5
+
+    try:
+        sqlutil.execute('''create temp table test_batch_none (
+            s text, f float, i int
+        )''',
+                        conn=conn)
+
+        # First batch: all None (5 rows)
+        sqlutil.execute('''
+            insert into test_batch_none values 
+            (NULL, NULL, NULL),
+            (NULL, NULL, NULL),
+            (NULL, NULL, NULL),
+            (NULL, NULL, NULL),
+            (NULL, NULL, NULL);
+        ''',
+                        conn=conn)
+
+        # Second batch: valid values
+        long_str = 'x' * 30  # Default strLength is 20
+        sqlutil.execute('''
+            insert into test_batch_none values 
+            (%s, 1.5, 10),
+            ('short', 2.5, 20),
+            ('test', 3.5, 30),
+            ('test', 4.5, 40),
+            ('test', 5.5, 50);
+        ''', (long_str, ),
+                        conn=conn)
+
+        s, f, i = sqlutil.get('select s, f, i from test_batch_none', conn=conn)
+
+        # Check if the string was truncated
+        # s[5] corresponds to the first row of the second batch
+        assert s[5] == long_str
+        assert np.isclose(f[5], 1.5)
+        assert i[5] == 10
+
+    finally:
+        sqlutil.execute('drop table if exists test_batch_none', conn=conn)
+        sqlutil_mod.config.arraysize = old_arraysize

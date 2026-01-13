@@ -1,12 +1,37 @@
 """Sqlutilpy module to access SQL databases
 """
-from __future__ import print_function
 import numpy
 import numpy as np
 import psycopg
-import threading
 import collections
 import warnings
+import concurrent.futures
+
+try:
+    from itertools import batched
+except ImportError:
+    batched = None
+
+
+def chunk_list(data, chunk_size):
+    """
+    Splits a list into chunks of approximate size.
+
+    - Uses itertools.batched (Python 3.12+) if available for max efficiency.
+    - Falls back to generator slicing for older Python versions.
+    """
+    if batched:
+        # Approach 1: Python 3.12+ (Yields Tuples)
+        return batched(data, chunk_size)
+    else:
+        # Approach 2: Fallback Generator (Yields Lists)
+        # Note: Slicing creates a shallow copy of the list structure.
+        def _fallback_gen():
+            for i in range(0, len(data), chunk_size):
+                yield data[i:i + chunk_size]
+
+        return _fallback_gen()
+
 
 try:
     import astropy.table as atpy
@@ -18,8 +43,6 @@ try:
 except ImportError:
     # pandas is not installed
     pandas = None
-
-import queue
 
 _WAIT_SELECT_TIMEOUT = 10
 STRLEN_DEFAULT = 20
@@ -177,22 +200,6 @@ def __fromrecords(recList, dtype=None, intNullVal=None):
     return res
 
 
-def __converter(qIn, qOut, endEvent, dtype, intNullVal):
-    """ Convert the input stream of tuples into numpy arrays """
-    while (not endEvent.is_set()):
-        try:
-            tups = qIn.get(True, 0.1)
-        except queue.Empty:
-            continue
-        try:
-            res = __fromrecords(tups, dtype=dtype, intNullVal=intNullVal)
-        except Exception:
-            print('Failed to convert input data into array')
-            endEvent.set()
-            raise
-        qOut.put(res)
-
-
 def __getDType(row, typeCodes, strLength):
     pgTypeHash = {
         16: bool,
@@ -259,9 +266,10 @@ def get(query,
         port=None,
         strLength=STRLEN_DEFAULT,
         timeout=None,
-        notNamed=False,
+        batched=True,
         asDict=False,
-        intNullVal=-9999):
+        intNullVal=-9999,
+        nthreads=1):
     '''
     Executes the sql query and returns the tuple or dictionary
     with the numpy arrays.
@@ -298,7 +306,7 @@ def get(query,
         Port of the database
     preamb : string
         SQL code to be executed before the query
-    notNamed : bool, optional
+    batched : bool, optional
         Whether to use 'named' or not-named cursor with PostgreSQL
         The default setting of False leads to on the fly conversion of
         retrieved results into numpy, thus it will not use more memory than
@@ -307,6 +315,8 @@ def get(query,
         needed to store the results, but with the benefit of faster query
         execution, because these queries use PostgreSQL parallelism and thus
         be ~ a factor of few faster
+    nthreads: int, optional
+        
     Returns
     -------
     ret : Tuple or dictionary
@@ -338,6 +348,12 @@ def get(query,
             warnings.warn('psycopg2 driver is not supported anymore. '
                           'We using psycopg instead')
             driver = 'psycopg'
+        if batched:
+            # This is related to postgresql server cursors vs
+            # application cursors
+            notNamed = False
+        else:
+            notNamed = True
         cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=notNamed)
 
         if params is None:
@@ -345,89 +361,78 @@ def get(query,
         else:
             res = cur.execute(query, params)
 
-        qIn = queue.Queue()
-        qOut = queue.Queue()
-        endEvent = threading.Event()
-        nrec = 0  # keeps the number of arrays sent to the other thread
-        start = True
-        # minus number received
-        reslist = []
-        proc = None
         colNames = []
         if driver == 'psycopg':
-            try:
-                while True:
-                    # Iterating over the cursor, retrieving batches of results
-                    # and then sending them for conversion
-                    tups = cur.fetchmany(config.arraysize)
-                    desc = cur.description
-
-                    # If the is just the start we need to launch the
-                    # thread doing the conversion
-                    no_results = tups == []
-                    if start and nrec == 0:
-                        typeCodes = [_tmp.type_code for _tmp in desc]
-                        colNames = [_tmp.name for _tmp in cur.description]
-
-                    # No more data
-                    if no_results:
-                        dtype = __getDType([None] * len(typeCodes), typeCodes,
-                                           strLength)
-                        break
-
-                    dtype = __getDType(tups[0], typeCodes, strLength)
-
-                    # Send the new batch for conversion
-                    qIn.put(tups)
-
-                    # If the is just the start we need to launch the
-                    # thread doing the conversion
-                    if start and nrec == 0:
-                        proc = threading.Thread(target=__converter,
-                                                args=(qIn, qOut, endEvent,
-                                                      dtype, intNullVal))
-                        proc.start()
-
-                    # nrec is the number of batches in conversion currently
-                    nrec += 1
-
-                    # Try to retrieve one processed batch without waiting
-                    # on it
-                    try:
-                        reslist.append(qOut.get(False))
-                        nrec -= 1
-                    except queue.Empty:
-                        pass
-                    start = False
-                # Now we are done fetching the data from the DB, we
-                # just need to assemble the converted results
-                while (nrec != 0):
-                    try:
-                        reslist.append(qOut.get(True, 0.1))
-                        nrec -= 1
-                    except queue.Empty:
-                        # continue looping unless the endEvent was set
-                        # which should happen in the case of the crash
-                        # of the converter thread
-                        if endEvent.is_set():
-                            raise Exception('Child thread failed')
-                endEvent.set()
-            except BaseException:
-                endEvent.set()
-                if proc is not None:
-                    # notice that here the timeout is larger than the timeout
-                    proc.join(0.2)
-                    # in the converter process
-                    if proc.is_alive():
-                        # could not kill
-                        pass
-                raise
-            if proc is not None:
-                proc.join()
-            if reslist == []:
-                res = numpy.array([], dtype=dtype)
+            # Fetch first batch to determine dtype
+            if batched:
+                first_batch = cur.fetchmany(config.arraysize)
             else:
-                res = numpy.concatenate(reslist)
+                first_batch = cur.fetchall()
+                print('done')
+            desc = cur.description
+
+            # Check if we have description
+            # (for non-select queries it might be None)
+            if desc:
+                type_codes = [_tmp.type_code for _tmp in desc]
+                colNames = [_tmp.name for _tmp in desc]
+            else:
+                type_codes = []
+                colNames = []
+
+            if not first_batch:
+                # Empty result set or no result (e.g. insert)
+                if type_codes:
+                    dtype = __getDType([None] * len(type_codes), type_codes,
+                                       strLength)
+                    res = numpy.array([], dtype=dtype)
+                else:
+                    # Fallback or empty
+                    dtype = None
+                    res = []
+            else:
+
+                def process_batch(batch):
+                    # Determine dtype from the first row of the current batch
+                    # This allows adapting to string lengths in later batches
+                    # if the first batch had Nulls
+                    dtype = __getDType(batch[0], type_codes, strLength)
+                    return __fromrecords(batch,
+                                         dtype=dtype,
+                                         intNullVal=intNullVal)
+
+                def batch_iter(first):
+                    yield first
+                    while True:
+                        batch = cur.fetchmany(config.arraysize)
+                        if not batch:
+                            break
+                        yield batch
+
+                if batched:
+                    with concurrent.futures.ThreadPoolExecutor(
+                            max_workers=nthreads) as executor:
+                        results_list = list(
+                            executor.map(process_batch,
+                                         batch_iter(first_batch)))
+                else:
+                    if len(first_batch) > config.arraysize:
+                        with concurrent.futures.ThreadPoolExecutor(
+                                max_workers=nthreads) as executor:
+                            results_list = list(
+                                executor.map(
+                                    process_batch,
+                                    chunk_list(first_batch, config.arraysize)))
+                    else:
+                        results_list = [process_batch(first_batch)]
+
+                # Check if results_list is valid
+                if results_list:
+                    res = numpy.concatenate(results_list)
+                else:
+                    # Should not be reached given logic above, but fallback
+                    dtype = __getDType(first_batch[0], type_codes, strLength)
+                    res = numpy.array([], dtype=dtype)
 
         elif driver == 'sqlite3':
             tups = cur.fetchall()
@@ -444,7 +449,12 @@ def get(query,
             else:
                 return [[]] * len(cur.description)
 
-        res = [res[tmp] for tmp in res.dtype.names]
+        if isinstance(res, numpy.ndarray) and res.dtype.names:
+            res = [res[tmp] for tmp in res.dtype.names]
+        elif isinstance(res, list) and not res:
+            # Handle empty result logic from original code if needed,
+            # but keeping consistent with original returning array list
+            pass
 
     except BaseException:
         failure_cleanup(conn, connSupplied)
