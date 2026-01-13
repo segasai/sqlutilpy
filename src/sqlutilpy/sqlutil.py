@@ -298,7 +298,15 @@ def get(query,
         Port of the database
     preamb : string
         SQL code to be executed before the query
-
+    notNamed : bool, optional
+        Whether to use 'named' or not-named cursor with PostgreSQL
+        The default setting of False leads to on the fly conversion of
+        retrieved results into numpy, thus it will not use more memory than
+        needed to store the results of the query.
+        The notNamed=True will use at least twice the amount of memory
+        needed to store the results, but with the benefit of faster query
+        execution, because these queries use PostgreSQL parallelism and thus
+        be ~ a factor of few faster
     Returns
     -------
     ret : Tuple or dictionary
@@ -326,6 +334,10 @@ def get(query,
                              port=port,
                              timeout=timeout)
     try:
+        if driver == 'psycopg2':
+            warnings.warn('psycopg2 driver is not supported anymore. '
+                          'We using psycopg instead')
+            driver = 'psycopg'
         cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=notNamed)
 
         if params is None:
@@ -341,10 +353,6 @@ def get(query,
         reslist = []
         proc = None
         colNames = []
-        if driver == 'psycopg2':
-            warnings.warn('psycopg2 driver is not supported anymore. '
-                          'We using psycopg instead')
-            driver = 'psycopg'
         if driver == 'psycopg':
             try:
                 while True:
