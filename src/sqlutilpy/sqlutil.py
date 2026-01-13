@@ -349,6 +349,7 @@ def get(query,
         qOut = queue.Queue()
         endEvent = threading.Event()
         nrec = 0  # keeps the number of arrays sent to the other thread
+        start = True
         # minus number received
         reslist = []
         proc = None
@@ -358,13 +359,13 @@ def get(query,
                 while True:
                     # Iterating over the cursor, retrieving batches of results
                     # and then sending them for conversion
-                    tups = cur.fetchmany()
+                    tups = cur.fetchmany(config.arraysize)
                     desc = cur.description
 
                     # If the is just the start we need to launch the
                     # thread doing the conversion
                     no_results = tups == []
-                    if nrec == 0:
+                    if start and nrec == 0:
                         typeCodes = [_tmp.type_code for _tmp in desc]
                         colNames = [_tmp.name for _tmp in cur.description]
 
@@ -381,7 +382,7 @@ def get(query,
 
                     # If the is just the start we need to launch the
                     # thread doing the conversion
-                    if nrec == 0:
+                    if start and nrec == 0:
                         proc = threading.Thread(target=__converter,
                                                 args=(qIn, qOut, endEvent,
                                                       dtype, intNullVal))
@@ -397,7 +398,7 @@ def get(query,
                         nrec -= 1
                     except queue.Empty:
                         pass
-
+                    start = False
                 # Now we are done fetching the data from the DB, we
                 # just need to assemble the converted results
                 while (nrec != 0):
