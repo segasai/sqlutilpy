@@ -425,10 +425,7 @@ def get(query,
             if proc is not None:
                 proc.join()
             if reslist == []:
-                nCols = len(desc)
-                res = numpy.array([],
-                                  dtype=numpy.dtype([('a%d' % i, 'f')
-                                                     for i in range(nCols)]))
+                res = numpy.array([], dtype=dtype)
             else:
                 res = numpy.concatenate(reslist)
 
