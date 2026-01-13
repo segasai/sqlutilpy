@@ -345,7 +345,7 @@ def get(query,
         else:
             res = cur.execute(query, params)
 
-        qIn = queue.Queue(1)
+        qIn = queue.Queue()
         qOut = queue.Queue()
         endEvent = threading.Event()
         nrec = 0  # keeps the number of arrays sent to the other thread
