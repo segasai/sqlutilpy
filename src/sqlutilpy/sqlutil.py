@@ -129,49 +129,73 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
     return cur
 
 
-def __fromrecords(recList, dtype=None, intNullVal=None):
+def __fromrecords(recList, dtype=None, intNullVal=None, strNullVal='None'):
     """
     This function was taken from np.core.records and updated to
-    support conversion null integers to intNullVal
+    support conversion null integers to intNullVal and strings to strNullVal
     """
 
-    shape = None
     descr = np.dtype((np.record, dtype))
-    try:
-        retval = np.array(recList, dtype=descr)
-    except TypeError:  # list of lists instead of list of tuples
-        shape = (len(recList), )
-        _array = np.recarray(shape, descr)
+
+    # Check if we must avoid fast path for strings to prevent None -> 'None' conversion
+    # Note: numpy's default conversion for None to string is 'None', so if
+    # strNullVal is 'None', we can still use the fast path.
+    force_object_strings = False
+    if strNullVal is not None and strNullVal != 'None':
+        if any(dtype.fields[n][0].kind in ('S', 'U') for n in dtype.names):
+            force_object_strings = True
+
+    if not force_object_strings:
         try:
-            for k in range(_array.size):
-                _array[k] = tuple(recList[k])
-        except TypeError:
-            convs = []
-            ncols = len(dtype.fields)
-            for _k in dtype.names:
-                _v = dtype.fields[_k]
-                if _v[0] in [np.int16, np.int32, np.int64]:
-                    convs.append(lambda x: intNullVal if x is None else x)
-                else:
-                    convs.append(lambda x: x)
-            convs = tuple(convs)
+            retval = np.array(recList, dtype=descr)
+            return retval.view(numpy.recarray)
+        except (TypeError, ValueError):
+            # Failed (likely due to None in int col). Fall through to object path.
+            pass
 
-            def convF(x):
-                return [convs[_](x[_]) for _ in range(ncols)]
+    # Vectorized fallback path using object arrays
+    names = dtype.names
+    new_formats = []
+    converters = {}
 
-            for k in range(k, _array.size):
-                try:
-                    _array[k] = tuple(recList[k])
-                except TypeError:
-                    _array[k] = tuple(convF(recList[k]))
-        return _array
-    else:
-        if shape is not None and retval.shape != shape:
-            retval.shape = shape
+    for name in names:
+        dt = dtype.fields[name][0]
+        if dt.kind in ('i', 'u'):
+            new_formats.append(object)
+            converters[name] = intNullVal
+        elif dt.kind in ('S', 'U') and strNullVal is not None:
+            new_formats.append(object)
+            converters[name] = strNullVal
+        else:
+            new_formats.append(dt)
 
-    res = retval.view(numpy.recarray)
+    temp_dtype = np.dtype({'names': names, 'formats': new_formats})
 
-    return res
+    if len(recList) == 0:
+        return np.recarray((0,), dtype=descr)
+
+    try:
+        arr = np.array(recList, dtype=temp_dtype)
+    except (TypeError, ValueError):
+        # Handle cases where np.array fails (e.g. ragged lists)
+        # by manually filling the object array
+        shape = (len(recList), )
+        arr = np.recarray(shape, temp_dtype)
+        for k in range(len(recList)):
+            arr[k] = tuple(recList[k])
+
+    # Apply conversions
+    for name, val in converters.items():
+        col = arr[name]
+        # Check for None efficiently
+        mask = (col == None)
+        if np.any(mask):
+            if val is not None:
+                col[mask] = val
+
+    # Cast to final dtype
+    retval = arr.astype(descr)
+    return retval.view(numpy.recarray)
 
 
 def __getDType(row, typeCodes, strLength):
@@ -269,6 +293,7 @@ def get(query,
         batched=True,
         asDict=False,
         intNullVal=-9999,
+        strNullVal='None',
         nthreads=1):
     '''
     Executes the sql query and returns the tuple or dictionary
@@ -291,6 +316,9 @@ def get(query,
         Strings will be truncated to this length
     intNullVal : integer, optional
         All the integer columns with nulls will have null replaced by
+        this value
+    strNullVal : string, optional
+        All the string columns with nulls will have null replaced by
         this value
     db : string
         The name of the database
@@ -401,7 +429,8 @@ def get(query,
                     dtype = __getDType(first_row, type_codes, strLength)
                     return __fromrecords(batch,
                                          dtype=dtype,
-                                         intNullVal=intNullVal)
+                                         intNullVal=intNullVal,
+                                         strNullVal=strNullVal)
 
                 def batch_iter(first):
                     yield first
@@ -786,6 +815,7 @@ def local_join(query,
                timeout=None,
                strLength=STRLEN_DEFAULT,
                intNullVal=-9999,
+               strNullVal='None',
                asDict=False):
     """
     Join your local data in python with the data in the database
@@ -838,7 +868,8 @@ def local_join(query,
                   preamb=preamb,
                   strLength=strLength,
                   asDict=asDict,
-                  intNullVal=intNullVal)
+                  intNullVal=intNullVal,
+                  strNullVal=strNullVal)
     except BaseException:
         failure_cleanup(conn, connSupplied)
         raise

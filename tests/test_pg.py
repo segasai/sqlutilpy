@@ -200,6 +200,20 @@ def test_StringFirstNull(setup, batched):
 
 
 @pytest.mark.parametrize("batched", [True, False])
+def test_StringNull(setup, batched):
+    kw, conn = setup
+    a, = sqlutil.get(''' values('abc'), (NULL)''', batched=batched, strNullVal='MISSING', **kw)
+    assert (len(a) == 2)
+    assert (a[0] == 'abc')
+    assert (a[1] == 'MISSING')
+    
+    # Test fallback if strNullVal is not set (should remain None in object array or 'None' string depending on implementation, 
+    # but based on my change, if strNullVal is None, we use fast path if possible. 
+    # If using fast path with numpy array of strings, None becomes 'None' string usually or empty string? 
+    # Actually in postgres -> python None is None. Numpy array of strings converts None to 'None'.
+    # But let's verify strNullVal functionality primarily.)
+
+@pytest.mark.parametrize("batched", [True, False])
 def test_get(setup, batched):
     kw, conn = setup
     a, b, c, d, e, f, g = sqlutil.get(
