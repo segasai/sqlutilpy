@@ -307,14 +307,15 @@ def get(query,
     preamb : string
         SQL code to be executed before the query
     batched : bool, optional
-        Whether to use 'named' or not-named cursor with PostgreSQL
-        The default setting of False leads to on the fly conversion of
+        Whether to use named or not-named cursor with PostgreSQL
+        The default setting of True leads to retrieval of results in batches
+        and on the fly conversion of
         retrieved results into numpy, thus it will not use more memory than
-        needed to store the results of the query.
-        The notNamed=True will use at least twice the amount of memory
+        needed to store the results of the query. The 
+        The batched=False will use at least twice the amount of memory
         needed to store the results, but with the benefit of faster query
         execution, because these queries use PostgreSQL parallelism and thus
-        be ~ a factor of few faster
+        can be ~ a factor of few faster
     Returns
     -------
     ret : Tuple or dictionary
