@@ -1,7 +1,10 @@
 Changelog
 
 # 0.27.0
-* Make posgresql  cursor not explicitly 'not-scrollable'. This may allow some plans to become parallel ? 
+* Introduce the non-batched mode with batched=False that allows (at the cost of more memory use) using the parallel PostgreSQL plans, which can speed up queries by a factor of few
+* remove the notNamed option of sqlutil.get
+* refactor the threading for converting data, to use the threadpool
+* I added more tests when strings are read, so hopefully the truncation into 20 characters should be more rare now.
 
 # 0.26.0
 * Preserve uppercase columns when ingestng data
