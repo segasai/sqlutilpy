@@ -171,6 +171,33 @@ def test_NoResults(setup, batched):
 
 
 @pytest.mark.parametrize("batched", [True, False])
+def test_NoResults_with_types(setup, batched):
+    kw, conn = setup
+    # Test asDict=False (default) - should return typed empty arrays
+    a, b, c = sqlutil.get(
+        'select 1::int as x, 2.5::float as y, \'abc\'::text as z where 2<1',
+        batched=batched, **kw)
+    assert len(a) == 0
+    assert len(b) == 0
+    assert len(c) == 0
+    # Check types if possible. PG returns types even for empty results.
+    # a should be integer-like, b float, c string
+    assert a.dtype.kind in ('i', 'u')
+    assert b.dtype.kind == 'f'
+    assert c.dtype.kind in ('S', 'U')
+
+    # Test asDict=True - should return dict with keys and empty arrays
+    res = sqlutil.get(
+        'select 1::int as x, 2.5::float as y, \'abc\'::text as z where 2<1',
+        batched=batched, asDict=True, **kw)
+    assert 'x' in res
+    assert 'y' in res
+    assert 'z' in res
+    assert len(res['x']) == 0
+    assert res['x'].dtype.kind in ('i', 'u')
+
+
+@pytest.mark.parametrize("batched", [True, False])
 def test_params(setup, batched):
     kw, conn = setup
     xid = 5

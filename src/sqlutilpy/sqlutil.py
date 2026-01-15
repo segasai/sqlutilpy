@@ -150,7 +150,8 @@ def __fromrecords(recList, dtype=None, intNullVal=None, strNullVal='None'):
             retval = np.array(recList, dtype=descr)
             return retval.view(numpy.recarray)
         except (TypeError, ValueError):
-            # Failed (likely due to None in int col). Fall through to object path.
+            # Failed (likely due to None in int col). Fall through to object
+            # path.
             pass
 
     # Vectorized fallback path using object arrays
@@ -278,6 +279,83 @@ def __get_representative_row(batch, type_codes):
     return first_row
 
 
+def __fix_numpy_record_array(res, intNullVal, strNullVal):
+    if res.size == 0:
+        return res
+
+    names = res.dtype.names
+    new_arrays = []
+
+    for name in names:
+        col = res[name]
+        dtype = col.dtype
+
+        if dtype.kind == 'O':
+            # Check for None (vectorized)
+            # We treat everything as candidates if it's Object type
+
+            # Find first non-None value to guess type
+            valid_mask = (col != None)
+            if not np.any(valid_mask):
+                # All None.
+                # We can't determine type. Return as is (Object filled with
+                # None)
+                new_arrays.append(col)
+                continue
+
+            # Take a sample (first valid)
+            first_val = col[valid_mask][0]
+
+            # INTEGER
+            if isinstance(first_val, (int, np.integer)) and not isinstance(
+                    first_val, (bool, np.bool_)):
+                # Verify all valid are integers
+                valid_vals = col[valid_mask]
+                is_valid = all(
+                    isinstance(x, (int, np.integer))
+                    and not isinstance(x, (bool, np.bool_))
+                    for x in valid_vals)
+                if is_valid:
+                    # Convert
+                    temp_col = np.copy(col)
+                    temp_col[~valid_mask] = intNullVal
+                    try:
+                        new_col = temp_col.astype(int)
+                        new_arrays.append(new_col)
+                        continue
+                    except Exception:
+                        pass
+
+            # FLOAT
+            if isinstance(first_val, (float, np.floating)):
+                if all(
+                        isinstance(x, (float, np.floating, int, np.integer))
+                        for x in col[valid_mask]):
+                    temp_col = np.copy(col)
+                    temp_col[~valid_mask] = np.nan
+                    try:
+                        new_col = temp_col.astype(float)
+                        new_arrays.append(new_col)
+                        continue
+                    except Exception:
+                        pass
+
+            # STRING
+            if isinstance(first_val, str):
+                if all(isinstance(x, str) for x in col[valid_mask]):
+                    # Replicate PG behavior: None -> strNullVal
+                    temp_col = np.copy(col)
+                    temp_col[~valid_mask] = strNullVal
+                    # Let numpy infer string length
+                    new_col = np.array(list(temp_col))
+                    new_arrays.append(new_col)
+                    continue
+
+        new_arrays.append(col)
+
+    return numpy.rec.fromarrays(new_arrays, names=names)
+
+
 def get(query,
         params=None,
         db="wsdb",
@@ -339,7 +417,7 @@ def get(query,
         The default setting of True leads to retrieval of results in batches
         and on the fly conversion of
         retrieved results into numpy, thus it will not use more memory than
-        needed to store the results of the query. The 
+        needed to store the results of the query. The
         The batched=False will use at least twice the amount of memory
         needed to store the results, but with the benefit of faster query
         execution, because these queries use PostgreSQL parallelism and thus
@@ -461,15 +539,17 @@ def get(query,
             colNames = [_tmp[0] for _tmp in cur.description]
             if len(tups) > 0:
                 res = numpy.rec.array(tups)
+                res = __fix_numpy_record_array(res, intNullVal, strNullVal)
             else:
-                return [[]] * len(cur.description)
+                res = [numpy.array([]) for _ in cur.description]
         elif driver == 'duckdb':
             tups = cur.fetchall()
             colNames = [_tmp[0] for _tmp in cur.description]
             if len(tups) > 0:
                 res = numpy.rec.array(tups)
+                res = __fix_numpy_record_array(res, intNullVal, strNullVal)
             else:
-                return [[]] * len(cur.description)
+                res = [numpy.array([]) for _ in cur.description]
 
         if isinstance(res, numpy.ndarray) and res.dtype.names:
             res = [res[tmp] for tmp in res.dtype.names]
