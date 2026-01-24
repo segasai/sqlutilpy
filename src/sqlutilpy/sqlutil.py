@@ -96,7 +96,7 @@ def getConnection(db=None,
     return conn
 
 
-def getCursor(conn, driver=None, preamb=None, notNamed=False):
+def getCursor(conn, driver=None, preamb=None, named=True):
     """
     Retrieve the database cursor
     """
@@ -112,7 +112,7 @@ def getCursor(conn, driver=None, preamb=None, notNamed=False):
             cur.execute('set cursor_tuple_fraction TO 1')
             # this is required because otherwise PG may decide to execute a
             # different plan
-        if notNamed:
+        if not named:
             return cur
         cur = conn.cursor(name='sqlutilcursor')
         cur.arraysize = config.arraysize
@@ -137,7 +137,8 @@ def __fromrecords(recList, dtype=None, intNullVal=None, strNullVal='None'):
 
     descr = np.dtype((np.record, dtype))
 
-    # Check if we must avoid fast path for strings to prevent None -> 'None' conversion
+    # Check if we must avoid fast path for strings to prevent
+    # None -> 'None' conversion
     # Note: numpy's default conversion for None to string is 'None', so if
     # strNullVal is 'None', we can still use the fast path.
     force_object_strings = False
@@ -173,7 +174,7 @@ def __fromrecords(recList, dtype=None, intNullVal=None, strNullVal='None'):
     temp_dtype = np.dtype({'names': names, 'formats': new_formats})
 
     if len(recList) == 0:
-        return np.recarray((0,), dtype=descr)
+        return np.recarray((0, ), dtype=descr)
 
     try:
         arr = np.array(recList, dtype=temp_dtype)
@@ -257,7 +258,8 @@ def __get_representative_row(batch, type_codes):
     """
     Scans the batch to find the maximum length of string columns and returns
     a representative row (based on the first row) with those maximum lengths.
-    This ensures that __getDType determines the correct string length for the array.
+    This ensures that __getDType determines the correct string length for
+    the array.
     """
     first_row = list(batch[0])
     strTypes = [25, 1042, 1043]
@@ -307,8 +309,10 @@ def __fix_numpy_record_array(res, intNullVal, strNullVal):
             first_val = col[valid_mask][0]
 
             # INTEGER
-            if isinstance(first_val, (int, np.integer)) and not isinstance(
-                    first_val, (bool, np.bool_)):
+            if isinstance(
+                    first_val,
+                (int, np.integer)) and not isinstance(first_val,
+                                                      (bool, np.bool_)):
                 # Verify all valid are integers
                 valid_vals = col[valid_mask]
                 is_valid = all(
@@ -456,10 +460,10 @@ def get(query,
         if batched:
             # This is related to postgresql server cursors vs
             # application cursors
-            notNamed = False
+            namedCursor = True
         else:
-            notNamed = True
-        cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=notNamed)
+            namedCursor = False
+        cur = getCursor(conn, driver=driver, preamb=preamb, named=namedCursor)
 
         if params is None:
             res = cur.execute(query)
@@ -635,7 +639,7 @@ def execute(query,
                              host=host,
                              timeout=timeout)
     try:
-        cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=True)
+        cur = getCursor(conn, driver=driver, preamb=preamb, named=False)
         if params is not None:
             cur.execute(query, params)
         else:
@@ -851,7 +855,7 @@ table/pandas/dictionary or provide a separate list of arrays and their names')
         fixed_names.append(fixed_name)
     names = fixed_names
     try:
-        cur = getCursor(conn, driver=driver, preamb=preamb, notNamed=True)
+        cur = getCursor(conn, driver=driver, preamb=preamb, named=False)
         if createTable:
             query1 = __create_schema(tableName, arrays, names, temp=temp)
             cur.execute(query1)
