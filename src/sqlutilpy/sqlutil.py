@@ -679,6 +679,26 @@ def __create_schema(tableName, arrays, names, temp=False):
     return outp + '(' + ','.join(outp1) + ')'
 
 
+def __escape_strings_for_copy(arr, delimiter):
+    """
+    Escape the characters that are special in the text format of
+    PostgreSQL's COPY FROM (backslash, newline, carriage return, tab
+    and the column delimiter) in a numpy string array
+    """
+    specials = ['\\', '\n', '\r', '\t']
+    # the backslash must be escaped first
+    if delimiter not in specials:
+        specials.append(delimiter)
+    replacements = {'\n': '\\n', '\r': '\\r', '\t': '\\t'}
+    for ch in specials:
+        rep = replacements.get(ch, '\\' + ch)
+        if arr.dtype.kind == 'S':
+            arr = np.char.replace(arr, ch.encode(), rep.encode())
+        else:
+            arr = np.char.replace(arr, ch, rep)
+    return arr
+
+
 def __print_arrays(arrays, f, delimiter=' '):
     """
     print the input arrays into the open file separated by a delimiter
@@ -703,6 +723,10 @@ def __print_arrays(arrays, f, delimiter=' '):
                 raise RuntimeError(
                     'Unsupported column type %s. Please report' %
                     (x.dtype.type))
+    arrays = [
+        __escape_strings_for_copy(x, delimiter)
+        if x.dtype.kind in ('S', 'U') else x for x in arrays
+    ]
     recarr = np.rec.fromarrays(arrays)
     if not array_mode:
         np.savetxt(f, recarr, fmt=fmts, delimiter=delimiter)

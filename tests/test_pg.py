@@ -468,6 +468,31 @@ def test_upload(setup, batched):
         batched=batched, conn=conn)
 
 
+@pytest.mark.parametrize("delimiter", ['|', ','])
+def test_upload_special_chars(setup, delimiter):
+    # strings containing the delimiter, backslashes, newlines etc
+    # must survive the upload unchanged
+    kw, conn = setup
+    mytab = 'sqlutil_test_special'
+    xstr = np.array([
+        'plain', 'has|pipe', 'has,comma', 'back\\slash', 'new\nline',
+        'tab\there', 'cr\rreturn', '\\N', 'mix|,\\\n\tend', ''
+    ])
+    xi = np.arange(len(xstr))
+    sqlutil.upload(mytab, (xi, xstr), ('xi', 'xstr'),
+                   delimiter=delimiter,
+                   conn=conn)
+    try:
+        yi, ystr = sqlutil.get('select xi, xstr from %s order by xi' %
+                               (mytab, ),
+                               conn=conn)
+        assert ((yi == xi).all())
+        for x, y in zip(xstr, ystr):
+            assert x == y
+    finally:
+        sqlutil.execute('drop table %s' % mytab, conn=conn)
+
+
 @pytest.mark.parametrize("batched", [True, False])
 def test_upload_big(setup, batched):
     kw, conn = setup
