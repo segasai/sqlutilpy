@@ -11,6 +11,7 @@ PG_DB = os.environ['SQLUTIL_TEST_PG_DB']
 PG_HOST = os.environ['SQLUTIL_TEST_PG_HOST']
 PG_USER = os.environ['SQLUTIL_TEST_PG_USER']
 PG_PASS = os.environ['SQLUTIL_TEST_PG_PASS']
+PG_PORT = int(os.environ.get('SQLUTIL_TEST_PG_PORT') or 5432)
 
 
 def getrand(N, float=False):
@@ -31,14 +32,15 @@ def getconn():
     return sqlutil.getConnection(host=PG_HOST,
                                  user=PG_USER,
                                  db=PG_DB,
+                                 port=PG_PORT,
                                  password=PG_PASS,
                                  driver='psycopg2')
 
 
 @pytest.fixture
 def setup():
-    conn = psycopg.connect('dbname=%s user=%s host=%s password=%s' %
-                           (PG_DB, PG_USER, PG_HOST, PG_PASS))
+    conn = psycopg.connect('dbname=%s user=%s host=%s port=%d password=%s' %
+                           (PG_DB, PG_USER, PG_HOST, PG_PORT, PG_PASS))
     cur = conn.cursor()
     cur.execute('''
     create unlogged table sqlutil_test (sicol smallint, intcol int,
@@ -53,7 +55,13 @@ def setup():
     values( 11,12,13,14.,15.,'2018-02-01 10:00:00','tester2', false);
     ''')
     conn.commit()
-    kw = {'host': PG_HOST, 'user': PG_USER, 'db': PG_DB, 'password': PG_PASS}
+    kw = {
+        'host': PG_HOST,
+        'user': PG_USER,
+        'db': PG_DB,
+        'port': PG_PORT,
+        'password': PG_PASS
+    }
 
     yield kw, conn
     conn.cursor().execute('drop table sqlutil_test;')
@@ -64,6 +72,7 @@ def test_getConn():
     conn = sqlutil.getConnection(host=PG_HOST,
                                  user=PG_USER,
                                  db=PG_DB,
+                                 port=PG_PORT,
                                  password=PG_PASS,
                                  driver='psycopg2')
     conn.close()
@@ -74,6 +83,7 @@ def test_getConnEnv():
     os.environ['PGHOST'] = PG_HOST
     os.environ['PGUSER'] = PG_USER
     os.environ['PGDATABASE'] = PG_DB
+    os.environ['PGPORT'] = str(PG_PORT)
     conn = sqlutil.getConnection(driver='psycopg2', password=PG_PASS)
     conn.close()
 
@@ -82,7 +92,7 @@ def test_getConnWithPort():
     conn = sqlutil.getConnection(host=PG_HOST,
                                  user=PG_USER,
                                  db=PG_DB,
-                                 port=5432,
+                                 port=PG_PORT,
                                  password=PG_PASS,
                                  driver='psycopg2')
     conn.close()
@@ -264,6 +274,21 @@ def test_Null(setup, batched):
     a, b = sqlutil.get('values (NULL,NULL), ( 1, 2.)', batched=batched, **kw)
     assert (np.isnan(b[0]))
     assert (a[0] == -9999)
+
+
+@pytest.mark.parametrize("batched", [True, False])
+def test_Null_no_replacement(setup, batched):
+    # if intNullVal is None, integer columns with nulls
+    # are returned as object columns with Nones
+    kw, conn = setup
+    a, b = sqlutil.get('values ( 1, 2.) , ( NULL, NULL) ',
+                       batched=batched,
+                       intNullVal=None,
+                       **kw)
+    assert a.dtype.kind == 'O'
+    assert a[0] == 1
+    assert a[1] is None
+    assert np.isnan(b[1])
 
 
 @pytest.mark.parametrize("batched", [True, False])

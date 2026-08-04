@@ -5,6 +5,7 @@ import numpy as np
 import psycopg
 import collections
 import warnings
+import uuid
 import concurrent.futures
 
 try:
@@ -114,7 +115,9 @@ def getCursor(conn, driver=None, preamb=None, named=True):
             # different plan
         if not named:
             return cur
-        cur = conn.cursor(name='sqlutilcursor')
+        # the unique cursor name allows several batched queries
+        # to run over the same connection
+        cur = conn.cursor(name='sqlutilcursor_' + uuid.uuid4().hex)
         cur.arraysize = config.arraysize
     elif driver == 'sqlite3':
         cur = conn.cursor()
@@ -187,6 +190,7 @@ def __fromrecords(recList, dtype=None, intNullVal=None, strNullVal='None'):
             arr[k] = tuple(recList[k])
 
     # Apply conversions
+    keep_object = []
     for name, val in converters.items():
         col = arr[name]
         # Check for None efficiently
@@ -194,6 +198,15 @@ def __fromrecords(recList, dtype=None, intNullVal=None, strNullVal='None'):
         if np.any(mask):
             if val is not None:
                 col[mask] = val
+            else:
+                # no null replacement value was given, so we keep
+                # the column as an object column with Nones in it
+                keep_object.append(name)
+
+    if keep_object:
+        descr = np.dtype((np.record, [(_n, object if _n in keep_object else
+                                       dtype.fields[_n][0])
+                                      for _n in names]))
 
     # Cast to final dtype
     retval = arr.astype(descr)
@@ -208,7 +221,6 @@ def __getDType(row, typeCodes, strLength):
         20: 'i8',
         21: 'i2',
         23: 'i4',
-        1007: 'i4',
         700: 'f4',
         701: 'f8',
         1000: bool,
@@ -375,15 +387,16 @@ def __process_duckdb_column(col, intNullVal, strNullVal):
     """
     if isinstance(col, np.ma.MaskedArray):
         kind = col.dtype.kind
-        if kind in ('i', 'u'):
+        if kind in ('i', 'u') and intNullVal is not None:
             col = col.filled(intNullVal)
         elif kind == 'f':
             col = col.filled(np.nan)
         elif kind == 'M':
             col = col.filled(np.datetime64('NaT'))
         else:
-            # object columns (i.e. strings) and booleans become
-            # object columns with Nones
+            # object columns (i.e. strings), booleans and integers
+            # without a null replacement value become object columns
+            # with Nones
             # (note that col.filled(None) cannot be used, as None
             # there means the default fill value)
             new_col = col.data.astype(object)
@@ -428,8 +441,9 @@ def get(query,
         Flag whether to retrieve the results as a dictionary with column
         names as keys
     strLength : integer
-        The maximum length of the string.
-        Strings will be truncated to this length
+        The minimum length allocated for string columns. If longer
+        strings are encountered, the allocated length is extended
+        to accommodate them
     intNullVal : integer, optional
         All the integer columns with nulls will have null replaced by
         this value
@@ -574,25 +588,36 @@ def get(query,
 
         elif driver == 'sqlite3':
             tups = cur.fetchall()
-            colNames = [_tmp[0] for _tmp in cur.description]
-            if len(tups) > 0:
-                res = numpy.rec.array(tups)
-                res = __fix_numpy_record_array(res, intNullVal, strNullVal)
+            if cur.description is None:
+                # no result set (e.g. create/insert statement)
+                colNames = []
+                res = []
             else:
-                res = [numpy.array([]) for _ in cur.description]
+                colNames = [_tmp[0] for _tmp in cur.description]
+                if len(tups) > 0:
+                    res = numpy.rec.array(tups)
+                    res = __fix_numpy_record_array(res, intNullVal,
+                                                   strNullVal)
+                else:
+                    res = [numpy.array([]) for _ in cur.description]
         elif driver == 'duckdb':
-            # fetchnumpy() is much faster than fetchall() followed
-            # by a conversion to numpy.
-            # It returns a dict of numpy (possibly masked) arrays;
-            # in the case of repeated column names the dict keys are
-            # deduplicated, so we take the column names from the
-            # description instead
-            col_dict = cur.fetchnumpy()
-            colNames = [_tmp[0] for _tmp in cur.description]
-            res = [
-                __process_duckdb_column(_tmp, intNullVal, strNullVal)
-                for _tmp in col_dict.values()
-            ]
+            if cur.description is None:
+                # no result set
+                colNames = []
+                res = []
+            else:
+                # fetchnumpy() is much faster than fetchall() followed
+                # by a conversion to numpy.
+                # It returns a dict of numpy (possibly masked) arrays;
+                # in the case of repeated column names the dict keys are
+                # deduplicated, so we take the column names from the
+                # description instead
+                col_dict = cur.fetchnumpy()
+                colNames = [_tmp[0] for _tmp in cur.description]
+                res = [
+                    __process_duckdb_column(_tmp, intNullVal, strNullVal)
+                    for _tmp in col_dict.values()
+                ]
 
         if isinstance(res, numpy.ndarray) and res.dtype.names:
             res = [res[tmp] for tmp in res.dtype.names]
@@ -634,6 +659,7 @@ def execute(query,
             user=None,
             password=None,
             host=None,
+            port=None,
             conn=None,
             preamb=None,
             timeout=None,
@@ -676,6 +702,7 @@ def execute(query,
                              user=user,
                              password=password,
                              host=host,
+                             port=port,
                              timeout=timeout)
     try:
         cur = getCursor(conn, driver=driver, preamb=preamb, named=False)
@@ -811,6 +838,7 @@ def upload(tableName,
            user=None,
            password=None,
            host=None,
+           port=None,
            conn=None,
            preamb=None,
            timeout=None,
@@ -838,6 +866,8 @@ def upload(tableName,
     user: string,
     password: string
     host: string
+    port: integer
+         Port of the database
     conn: object
          SQL connection
     preamb: string
@@ -871,6 +901,7 @@ def upload(tableName,
                              user=user,
                              password=password,
                              host=host,
+                             port=port,
                              timeout=timeout)
     if names is None:
         for i in range(1):
@@ -935,11 +966,11 @@ table/pandas/dictionary or provide a separate list of arrays and their names')
 
             finally:
                 pass
+        if analyze:
+            cur.execute('analyze %s' % tableName)
     except BaseException:
         failure_cleanup(conn, connSupplied)
         raise
-    if analyze:
-        cur.execute('analyze %s' % tableName)
     cur.close()
     if not noCommit:
         conn.commit()

@@ -98,6 +98,19 @@ def test_types_and_nulls(setup_types):
     assert (res['allnull'] == np.array([-9999, -9999])).all()
 
 
+def test_intnull_none(setup_types):
+    # if intNullVal is None, integer columns with nulls
+    # are returned as object columns with Nones
+    conn = setup_types
+    i_n, = sqlutil.get('select i_n from tmp_types order by i',
+                       conn=conn,
+                       driver='duckdb',
+                       intNullVal=None)
+    assert i_n.dtype.kind == 'O'
+    assert i_n[0] == 10
+    assert i_n[1] is None
+
+
 def test_custom_nullvals(setup_types):
     conn = setup_types
     i_n, s_n = sqlutil.get('select i_n, s_n from tmp_types order by i',

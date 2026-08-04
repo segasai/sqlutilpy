@@ -8,6 +8,7 @@ PG_DB = os.environ.get('SQLUTIL_TEST_PG_DB')
 PG_HOST = os.environ.get('SQLUTIL_TEST_PG_HOST')
 PG_USER = os.environ.get('SQLUTIL_TEST_PG_USER')
 PG_PASS = os.environ.get('SQLUTIL_TEST_PG_PASS', "")
+PG_PORT = int(os.environ.get('SQLUTIL_TEST_PG_PORT') or 5432)
 
 
 @pytest.fixture(scope="module")
@@ -18,6 +19,7 @@ def pg_conn():
         host=PG_HOST,
         user=PG_USER,
         db=PG_DB,
+        port=PG_PORT,
         password=PG_PASS,
         driver='psycopg')
     yield conn
