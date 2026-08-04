@@ -281,6 +281,71 @@ def __get_representative_row(batch, type_codes):
     return first_row
 
 
+def __fix_object_column(col, intNullVal, strNullVal):
+    """
+    Convert an object column into a typed numpy array if possible,
+    replacing the Nones in integer/string columns by intNullVal/strNullVal
+    and by NaNs in float columns.
+    The columns that cannot be converted are returned unchanged.
+    """
+    # Find first non-None value to guess type
+    # (we avoid col != None here as that fails for columns
+    # containing arrays)
+    valid_mask = np.fromiter((_tmp is not None for _tmp in col),
+                             dtype=bool,
+                             count=len(col))
+    if not np.any(valid_mask):
+        # All None.
+        # We can't determine type. Return as is (Object filled with
+        # None)
+        return col
+
+    # Take a sample (first valid)
+    first_val = col[valid_mask][0]
+
+    # INTEGER
+    if isinstance(first_val,
+                  (int, np.integer)) and not isinstance(
+                      first_val, (bool, np.bool_)):
+        # Verify all valid are integers
+        valid_vals = col[valid_mask]
+        is_valid = all(
+            isinstance(x, (int, np.integer))
+            and not isinstance(x, (bool, np.bool_))
+            for x in valid_vals)
+        if is_valid:
+            # Convert
+            temp_col = np.copy(col)
+            temp_col[~valid_mask] = intNullVal
+            try:
+                return temp_col.astype(int)
+            except Exception:
+                pass
+
+    # FLOAT
+    if isinstance(first_val, (float, np.floating)):
+        if all(
+                isinstance(x, (float, np.floating, int, np.integer))
+                for x in col[valid_mask]):
+            temp_col = np.copy(col)
+            temp_col[~valid_mask] = np.nan
+            try:
+                return temp_col.astype(float)
+            except Exception:
+                pass
+
+    # STRING
+    if isinstance(first_val, str):
+        if all(isinstance(x, str) for x in col[valid_mask]):
+            # Replicate PG behavior: None -> strNullVal
+            temp_col = np.copy(col)
+            temp_col[~valid_mask] = strNullVal
+            # Let numpy infer string length
+            return np.array(list(temp_col))
+
+    return col
+
+
 def __fix_numpy_record_array(res, intNullVal, strNullVal):
     if res.size == 0:
         return res
@@ -290,74 +355,43 @@ def __fix_numpy_record_array(res, intNullVal, strNullVal):
 
     for name in names:
         col = res[name]
-        dtype = col.dtype
 
-        if dtype.kind == 'O':
-            # Check for None (vectorized)
+        if col.dtype.kind == 'O':
             # We treat everything as candidates if it's Object type
-
-            # Find first non-None value to guess type
-            valid_mask = (col != None)
-            if not np.any(valid_mask):
-                # All None.
-                # We can't determine type. Return as is (Object filled with
-                # None)
-                new_arrays.append(col)
-                continue
-
-            # Take a sample (first valid)
-            first_val = col[valid_mask][0]
-
-            # INTEGER
-            if isinstance(
-                    first_val,
-                (int, np.integer)) and not isinstance(first_val,
-                                                      (bool, np.bool_)):
-                # Verify all valid are integers
-                valid_vals = col[valid_mask]
-                is_valid = all(
-                    isinstance(x, (int, np.integer))
-                    and not isinstance(x, (bool, np.bool_))
-                    for x in valid_vals)
-                if is_valid:
-                    # Convert
-                    temp_col = np.copy(col)
-                    temp_col[~valid_mask] = intNullVal
-                    try:
-                        new_col = temp_col.astype(int)
-                        new_arrays.append(new_col)
-                        continue
-                    except Exception:
-                        pass
-
-            # FLOAT
-            if isinstance(first_val, (float, np.floating)):
-                if all(
-                        isinstance(x, (float, np.floating, int, np.integer))
-                        for x in col[valid_mask]):
-                    temp_col = np.copy(col)
-                    temp_col[~valid_mask] = np.nan
-                    try:
-                        new_col = temp_col.astype(float)
-                        new_arrays.append(new_col)
-                        continue
-                    except Exception:
-                        pass
-
-            # STRING
-            if isinstance(first_val, str):
-                if all(isinstance(x, str) for x in col[valid_mask]):
-                    # Replicate PG behavior: None -> strNullVal
-                    temp_col = np.copy(col)
-                    temp_col[~valid_mask] = strNullVal
-                    # Let numpy infer string length
-                    new_col = np.array(list(temp_col))
-                    new_arrays.append(new_col)
-                    continue
-
-        new_arrays.append(col)
+            new_arrays.append(
+                __fix_object_column(col, intNullVal, strNullVal))
+        else:
+            new_arrays.append(col)
 
     return numpy.rec.fromarrays(new_arrays, names=names)
+
+
+def __process_duckdb_column(col, intNullVal, strNullVal):
+    """
+    Convert a single column returned by duckdb's fetchnumpy() into
+    the sqlutilpy convention, i.e. nulls in integer/string columns
+    replaced by intNullVal/strNullVal, by NaNs in float columns and
+    by NaTs in datetime columns; strings converted to fixed-width arrays
+    """
+    if isinstance(col, np.ma.MaskedArray):
+        kind = col.dtype.kind
+        if kind in ('i', 'u'):
+            col = col.filled(intNullVal)
+        elif kind == 'f':
+            col = col.filled(np.nan)
+        elif kind == 'M':
+            col = col.filled(np.datetime64('NaT'))
+        else:
+            # object columns (i.e. strings) and booleans become
+            # object columns with Nones
+            # (note that col.filled(None) cannot be used, as None
+            # there means the default fill value)
+            new_col = col.data.astype(object)
+            new_col[np.ma.getmaskarray(col)] = None
+            col = new_col
+    if col.dtype.kind == 'O':
+        col = __fix_object_column(col, intNullVal, strNullVal)
+    return col
 
 
 def get(query,
@@ -547,13 +581,18 @@ def get(query,
             else:
                 res = [numpy.array([]) for _ in cur.description]
         elif driver == 'duckdb':
-            tups = cur.fetchall()
+            # fetchnumpy() is much faster than fetchall() followed
+            # by a conversion to numpy.
+            # It returns a dict of numpy (possibly masked) arrays;
+            # in the case of repeated column names the dict keys are
+            # deduplicated, so we take the column names from the
+            # description instead
+            col_dict = cur.fetchnumpy()
             colNames = [_tmp[0] for _tmp in cur.description]
-            if len(tups) > 0:
-                res = numpy.rec.array(tups)
-                res = __fix_numpy_record_array(res, intNullVal, strNullVal)
-            else:
-                res = [numpy.array([]) for _ in cur.description]
+            res = [
+                __process_duckdb_column(_tmp, intNullVal, strNullVal)
+                for _tmp in col_dict.values()
+            ]
 
         if isinstance(res, numpy.ndarray) and res.dtype.names:
             res = [res[tmp] for tmp in res.dtype.names]
