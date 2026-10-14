@@ -740,9 +740,10 @@ def test_notNamed_deprecated(setup):
     assert list(a) == [1, 11]
     with pytest.warns(DeprecationWarning, match='notNamed'):
         cur = sqlutil.getCursor(conn, driver='psycopg', notNamed=True)
-    assert cur.name is None
+    assert not isinstance(cur, psycopg.ServerCursor)
+    cur.close()
     with pytest.warns(DeprecationWarning, match='notNamed'):
         cur = sqlutil.getCursor(conn, driver='psycopg', notNamed=False)
-    assert cur.name is not None
+    assert isinstance(cur, psycopg.ServerCursor)
     cur.close()
     conn.rollback()
