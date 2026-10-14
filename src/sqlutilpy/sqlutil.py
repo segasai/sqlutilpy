@@ -388,7 +388,13 @@ def __process_duckdb_column(col, intNullVal, strNullVal):
     if isinstance(col, np.ma.MaskedArray):
         kind = col.dtype.kind
         if kind in ('i', 'u') and intNullVal is not None:
-            col = col.filled(intNullVal)
+            try:
+                col = col.filled(intNullVal)
+            except (TypeError, OverflowError):
+                # intNullVal does not fit into the column type (e.g. a
+                # negative value for an unsigned or a tinyint column),
+                # so the column is widened to int64 first
+                col = col.astype(np.int64).filled(intNullVal)
         elif kind == 'f':
             col = col.filled(np.nan)
         elif kind == 'M':
@@ -883,7 +889,7 @@ def upload(tableName,
          if True the table will be created before uploading (default)
     delimiter: string
          the string used for delimiting the input data when ingesting into
-         the db (default is |)
+         the db (default is ``|``)
 
     Examples
     --------

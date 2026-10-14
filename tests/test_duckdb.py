@@ -144,3 +144,32 @@ def test_empty_typed(setup_types):
     assert len(i) == 0
     assert len(s) == 0
     assert i.dtype.kind == 'i'
+
+
+def test_narrow_and_unsigned_int_nulls():
+    # integer types into which intNullVal does not fit
+    # (tinyint, unsigned) must still get intNullVal substituted
+    conn = duckdb.connect(':memory:')
+    cur = conn.cursor()
+    cur.execute("""create table tmp_ints (
+        i int, ti tinyint, uti utinyint, ubi ubigint, ui uinteger)""")
+    cur.execute("""insert into tmp_ints values
+        (1, 5, 6, 7, 8), (2, NULL, NULL, NULL, NULL)""")
+    cur.close()
+    res = sqlutil.get('select * from tmp_ints order by i',
+                      conn=conn,
+                      driver='duckdb',
+                      asDict=True)
+    for k in ['ti', 'uti', 'ubi', 'ui']:
+        assert res[k].dtype.kind == 'i'
+        assert res[k][1] == -9999
+    assert res['ti'][0] == 5
+    assert res['ubi'][0] == 7
+    # when the null value fits, the narrow type is preserved
+    ti, = sqlutil.get('select ti from tmp_ints order by i',
+                      conn=conn,
+                      driver='duckdb',
+                      intNullVal=-1)
+    assert ti.dtype == np.int8
+    assert ti[1] == -1
+    conn.close()

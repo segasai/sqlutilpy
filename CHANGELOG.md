@@ -1,5 +1,16 @@
 Changelog
 
+# 0.28.0
+* upload(): strings containing the delimiter, backslashes, newlines, tabs or carriage returns are now escaped and survive the upload unchanged
+* get(): intNullVal=None keeps the nulls in integer columns as None (the column is returned as an object array) instead of failing
+* get(): statements that do not return a result set no longer fail with sqlite3/duckdb
+* get(): use a unique server-side cursor name so that several batched queries can be run over the same connection
+* get() with duckdb now uses the much faster fetchnumpy() interface. As a result the integer/float columns keep the width of the database type (e.g. int -> int32, float -> float32, rather than always int64/float64), dates, timestamps with time zone and intervals are returned as datetime64/timedelta64, decimals and hugeints as float64, blobs as object arrays of bytearrays, and list columns are now supported
+* add the port argument to execute() and upload()
+* upload(): analyze is now run inside the try block, so a failure there rolls back the transaction
+* fix the strLength docstring (strings are not truncated, the allocated length is extended as needed)
+* packaging: remove numpydoc and a duplicate numpy from the dependencies; the readthedocs build uses docs/requirements.txt and python 3.12
+
 # 0.27.0
 * Introduce the non-batched mode with batched=False that allows (at the cost of more memory use) using the parallel PostgreSQL plans, which can speed up queries by a factor of few
 * remove the notNamed option of sqlutil.get
