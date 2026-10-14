@@ -79,11 +79,13 @@ def test_getConn():
     pass
 
 
-def test_getConnEnv():
-    os.environ['PGHOST'] = PG_HOST
-    os.environ['PGUSER'] = PG_USER
-    os.environ['PGDATABASE'] = PG_DB
-    os.environ['PGPORT'] = str(PG_PORT)
+def test_getConnEnv(monkeypatch):
+    # monkeypatch restores the environment after the test, so that the
+    # PG* variables do not leak into the other tests
+    monkeypatch.setenv('PGHOST', PG_HOST)
+    monkeypatch.setenv('PGUSER', PG_USER)
+    monkeypatch.setenv('PGDATABASE', PG_DB)
+    monkeypatch.setenv('PGPORT', str(PG_PORT))
     conn = sqlutil.getConnection(driver='psycopg', password=PG_PASS)
     conn.close()
 
@@ -99,18 +101,25 @@ def test_getConnWithPort():
 
 
 def test_getConnFail():
-    with pytest.raises(Exception):
+    # a connection to a database that does not exist must fail
+    # irrespective of the authentication setup (password, trust, .pgpass)
+    with pytest.raises(psycopg.OperationalError):
         sqlutil.getConnection(host=PG_HOST,
                               user=PG_USER,
-                              db=PG_DB,
-                              driver='psycopgXX')
+                              db='sqlutil_nonexistent_db_xyz',
+                              port=PG_PORT,
+                              password=PG_PASS,
+                              driver='psycopg')
 
 
 def test_getConnWarn():
-    sqlutil.getConnection(host=PG_HOST,
-                          user=PG_USER,
-                          db=PG_DB,
-                          driver='psycopg2')
+    conn = sqlutil.getConnection(host=PG_HOST,
+                                 user=PG_USER,
+                                 db=PG_DB,
+                                 port=PG_PORT,
+                                 password=PG_PASS,
+                                 driver='psycopg2')
+    conn.close()
 
 
 def test_execute():

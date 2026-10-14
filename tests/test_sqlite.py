@@ -50,3 +50,24 @@ def test_intnull_none(setup):
     assert a.dtype.kind == 'O'
     assert a[0] == 5
     assert a[1] is None
+
+
+def test_unknown_driver(setup):
+    # an unknown driver must be rejected before any connection attempt,
+    # both with and without a user supplied connection
+    import numpy as np
+    conn = sqlite3.connect('sql.db')
+    for kw in [dict(db='sql.db'), dict(conn=conn)]:
+        with pytest.raises(sqlutil.SqlUtilException):
+            sqlutil.get('select 1', driver='nosuchdriver', **kw)
+        with pytest.raises(sqlutil.SqlUtilException):
+            sqlutil.execute('select 1', driver='nosuchdriver', **kw)
+        with pytest.raises(sqlutil.SqlUtilException):
+            sqlutil.upload('tmp3', (np.arange(2), ), ('a', ),
+                           driver='nosuchdriver',
+                           **kw)
+    with pytest.raises(sqlutil.SqlUtilException):
+        sqlutil.getCursor(conn, driver='nosuchdriver')
+    with pytest.raises(sqlutil.SqlUtilException):
+        sqlutil.getConnection(db='sql.db', driver='nosuchdriver')
+    conn.close()
