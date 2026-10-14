@@ -9,7 +9,7 @@ dependencies = [
     "numpy>=2",
     "psycopg[binary]"
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "BSD"}
 keywords = ["numpy postgresql query sql sqlite array"]
