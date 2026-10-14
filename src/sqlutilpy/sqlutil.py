@@ -397,13 +397,15 @@ def __process_duckdb_column(col, intNullVal, strNullVal):
     if isinstance(col, np.ma.MaskedArray):
         kind = col.dtype.kind
         if kind in ('i', 'u') and intNullVal is not None:
-            try:
-                col = col.filled(intNullVal)
-            except (TypeError, OverflowError):
+            info = np.iinfo(col.dtype)
+            if not (info.min <= intNullVal <= info.max):
                 # intNullVal does not fit into the column type (e.g. a
                 # negative value for an unsigned or a tinyint column),
-                # so the column is widened to int64 first
-                col = col.astype(np.int64).filled(intNullVal)
+                # so the column is widened to int64 first.
+                # (we check explicitly rather than catch an exception,
+                # because numpy<2 silently wraps the value instead)
+                col = col.astype(np.int64)
+            col = col.filled(intNullVal)
         elif kind == 'f':
             col = col.filled(np.nan)
         elif kind == 'M':
