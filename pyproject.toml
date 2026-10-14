@@ -14,7 +14,7 @@ readme = "README.md"
 license = {text = "BSD"}
 keywords = ["numpy postgresql query sql sqlite array"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - PRoduction/Stable",
     "License :: OSI Approved :: BSD License",
     "Topic :: Utilities",
 ]
