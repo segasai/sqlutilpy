@@ -728,3 +728,21 @@ def test_string_growth(setup, batched):
 
     finally:
         sqlutil.execute(f"drop table if exists {table_name}", conn=conn)
+
+
+def test_notNamed_deprecated(setup):
+    # notNamed=True is a deprecated alias of batched=False
+    kw, conn = setup
+    with pytest.warns(DeprecationWarning, match='notNamed'):
+        a, = sqlutil.get('select sicol from sqlutil_test order by sicol',
+                         notNamed=True,
+                         conn=conn)
+    assert list(a) == [1, 11]
+    with pytest.warns(DeprecationWarning, match='notNamed'):
+        cur = sqlutil.getCursor(conn, driver='psycopg', notNamed=True)
+    assert cur.name is None
+    with pytest.warns(DeprecationWarning, match='notNamed'):
+        cur = sqlutil.getCursor(conn, driver='psycopg', notNamed=False)
+    assert cur.name is not None
+    cur.close()
+    conn.rollback()

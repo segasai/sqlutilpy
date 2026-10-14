@@ -1,5 +1,9 @@
 Changelog
 
+# 0.30.0
+* All the options of get(), execute(), upload(), local_join(), getConnection() and getCursor() are now keyword-only and listed in the same order in every function (db, driver, user, password, host, port, conn, preamb, timeout, then the function specific options). Only the query/parameters and the table name/arrays/column names can be given positionally. This stops the argument order changes between releases (e.g. the port argument added in 0.28.0 before conn in execute() and upload()) from silently shifting positional arguments
+* get() and getCursor() accept again the notNamed option removed in 0.27.0, as a deprecated alias of batched=not notNamed / named=not notNamed. It emits a DeprecationWarning and will be removed in a future release
+
 # 0.29.0
 * get() with duckdb: fix the null replacement in narrow and unsigned integer columns (tinyint, utinyint, uinteger, ubigint) with numpy<2, where intNullVal was silently wrapped (e.g. -9999 became -15 in a tinyint column) instead of the column being widened to int64
 * This is the last release supporting numpy<2

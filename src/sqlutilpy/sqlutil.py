@@ -53,7 +53,8 @@ def __check_driver(driver):
     return driver
 
 
-def getConnection(db=None,
+def getConnection(*,
+                  db=None,
                   driver=None,
                   user=None,
                   password=None,
@@ -123,7 +124,12 @@ def getConnection(db=None,
     return conn
 
 
-def getCursor(conn, driver=None, preamb=None, named=True):
+def getCursor(conn,
+              *,
+              driver=None,
+              preamb=None,
+              named=True,
+              notNamed=None):
     """
     Retrieve the database cursor
 
@@ -138,13 +144,25 @@ def getCursor(conn, driver=None, preamb=None, named=True):
     named : bool
         If True (the default) and the driver is 'psycopg', a server-side
         (named) cursor is returned, so that the results can be fetched in
-        batches. Ignored for the other drivers
+        batches; this is what get(batched=True) uses. If False a
+        client-side cursor is returned, as for get(batched=False).
+        Ignored for the other drivers
+    notNamed : bool, optional
+        Deprecated spelling from before 0.27: notNamed=True is the same as
+        named=False. It will be removed in a future release
 
     Returns
     -------
     cur : object
         Database cursor
     """
+    if notNamed is not None:
+        # the pre-0.27 spelling of named=not notNamed
+        warnings.warn(
+            'notNamed is deprecated; use named=not notNamed instead',
+            DeprecationWarning,
+            stacklevel=2)
+        named = not notNamed
     driver = __check_driver(driver)
     if driver == 'psycopg':
         cur = conn.cursor(scrollable=False)
@@ -455,21 +473,23 @@ def __process_duckdb_column(col, intNullVal, strNullVal):
 
 def get(query,
         params=None,
+        *,
         db="wsdb",
         driver="psycopg",
         user=None,
         password=None,
         host=None,
-        preamb=None,
-        conn=None,
         port=None,
-        strLength=STRLEN_DEFAULT,
+        conn=None,
+        preamb=None,
         timeout=None,
+        strLength=STRLEN_DEFAULT,
         batched=True,
         asDict=False,
         intNullVal=-9999,
         strNullVal='None',
-        nthreads=1):
+        nthreads=1,
+        notNamed=None):
     """
     Execute the SQL query and return the result as a tuple or dictionary
     of numpy arrays, one array per column.
@@ -495,27 +515,28 @@ def get(query,
         Hostname of the database (PostgreSQL only)
     port : integer, optional
         Port of the database (PostgreSQL only)
-    preamb : string, optional
-        SQL to be executed before the query
     conn : object, optional
         An existing connection to the DB (see getConnection()), to avoid
         reconnecting. The connection is left open afterwards. The driver
         argument must still match the connection
+    preamb : string, optional
+        SQL to be executed before the query
+    timeout : integer, optional
+        How long to wait for a locked database, in seconds (SQLite only)
     strLength : integer, optional
         The minimum width allocated for string columns (PostgreSQL only).
         If longer strings are encountered the width is extended to
         accommodate them. With SQLite and DuckDB the width is always
         inferred from the data
-    timeout : integer, optional
-        How long to wait for a locked database, in seconds (SQLite only)
     batched : bool, optional
         PostgreSQL only. With the default of True the results are
-        retrieved through a server-side cursor in batches of
+        retrieved through a server-side (named) cursor in batches of
         config.arraysize rows and converted to numpy on the fly, so the
-        memory use is about the size of the final arrays. With False the
-        whole result is fetched at once, which needs about twice the
-        memory, but lets PostgreSQL use parallel query plans, which can be
-        several times faster for heavy queries
+        memory use is about the size of the final arrays. With False a
+        client-side cursor is used and the whole result is fetched at
+        once, which needs about twice the memory, but lets PostgreSQL use
+        parallel query plans, which can be several times faster for heavy
+        queries. This is the named argument of getCursor()
     asDict : bool, optional
         If True, return an ordered dictionary keyed by column name instead
         of a tuple of arrays. Repeated column names get a numeric suffix
@@ -529,6 +550,10 @@ def get(query,
     nthreads : integer, optional
         The number of threads used to convert the batches to numpy
         in the batched PostgreSQL mode
+    notNamed : bool, optional
+        Deprecated spelling from before 0.27: notNamed=True is the same as
+        batched=False (a client-side cursor). It will be removed in a
+        future release
 
     Returns
     -------
@@ -555,6 +580,14 @@ def get(query,
     ...                      db='mydata.db', driver='sqlite3')
     """
 
+    if notNamed is not None:
+        # the pre-0.27 spelling: notNamed=True asked for a client-side
+        # cursor, which is what batched=False does now
+        warnings.warn(
+            'notNamed is deprecated; use batched=not notNamed instead',
+            DeprecationWarning,
+            stacklevel=2)
+        batched = not notNamed
     driver = __check_driver(driver)
     connSupplied = (conn is not None)
     if not connSupplied:
@@ -566,13 +599,11 @@ def get(query,
                              port=port,
                              timeout=timeout)
     try:
-        if batched:
-            # This is related to postgresql server cursors vs
-            # application cursors
-            namedCursor = True
-        else:
-            namedCursor = False
-        cur = getCursor(conn, driver=driver, preamb=preamb, named=namedCursor)
+        # batched=True means a server-side (named) PostgreSQL cursor,
+        # read with fetchmany() in chunks of config.arraysize rows;
+        # batched=False means a client-side cursor read with one
+        # fetchall(). The cursor type is irrelevant for the other drivers
+        cur = getCursor(conn, driver=driver, preamb=preamb, named=batched)
 
         if params is None:
             res = cur.execute(query)
@@ -714,6 +745,7 @@ def get(query,
 
 def execute(query,
             params=None,
+            *,
             db='wsdb',
             driver="psycopg",
             user=None,
@@ -907,6 +939,7 @@ def failure_cleanup(conn, connSupplied):
 def upload(tableName,
            arrays,
            names=None,
+           *,
            db="wsdb",
            driver="psycopg",
            user=None,
@@ -1074,6 +1107,7 @@ def local_join(query,
                tableName,
                arrays,
                names,
+               *,
                db=None,
                driver="psycopg",
                user=None,
@@ -1084,9 +1118,9 @@ def local_join(query,
                preamb=None,
                timeout=None,
                strLength=STRLEN_DEFAULT,
+               asDict=False,
                intNullVal=-9999,
-               strNullVal='None',
-               asDict=False):
+               strNullVal='None'):
     """
     Join your local data in python with the data in the database.
     PostgreSQL only.
@@ -1126,14 +1160,14 @@ def local_join(query,
         Unused for PostgreSQL
     strLength : integer, optional
         The minimum width allocated for string columns (see get())
-    intNullVal : integer or None, optional
-        The value that replaces nulls in integer columns (see get())
-    strNullVal : string, optional
-        The value that replaces nulls in string columns (see get())
     asDict : bool, optional
         If True, return an ordered dictionary keyed by column name instead
         of a tuple of arrays
 
+    intNullVal : integer or None, optional
+        The value that replaces nulls in integer columns (see get())
+    strNullVal : string, optional
+        The value that replaces nulls in string columns (see get())
     Returns
     -------
     ret : tuple or dictionary
