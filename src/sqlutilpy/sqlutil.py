@@ -755,7 +755,7 @@ def __escape_strings_for_copy(arr, delimiter):
     """
     Escape the characters that are special in the text format of
     PostgreSQL's COPY FROM (backslash, newline, carriage return, tab
-    and the column delimiter) in a numpy string array
+    and the column delimiter) in a numpy unicode string array
     """
     specials = ['\\', '\n', '\r', '\t']
     # the backslash must be escaped first
@@ -764,10 +764,7 @@ def __escape_strings_for_copy(arr, delimiter):
     replacements = {'\n': '\\n', '\r': '\\r', '\t': '\\t'}
     for ch in specials:
         rep = replacements.get(ch, '\\' + ch)
-        if arr.dtype.kind == 'S':
-            arr = np.char.replace(arr, ch.encode(), rep.encode())
-        else:
-            arr = np.char.replace(arr, ch, rep)
+        arr = np.char.replace(arr, ch, rep)
     return arr
 
 
@@ -795,9 +792,15 @@ def __print_arrays(arrays, f, delimiter=' '):
                 raise RuntimeError(
                     'Unsupported column type %s. Please report' %
                     (x.dtype.type))
+    # bytes arrays are decoded (as utf-8) into unicode arrays, since
+    # otherwise they would be written as the b'...' python literals
+    arrays = [
+        np.char.decode(x, 'utf-8') if x.dtype.kind == 'S' else x
+        for x in arrays
+    ]
     arrays = [
         __escape_strings_for_copy(x, delimiter)
-        if x.dtype.kind in ('S', 'U') else x for x in arrays
+        if x.dtype.kind == 'U' else x for x in arrays
     ]
     recarr = np.rec.fromarrays(arrays)
     if not array_mode:

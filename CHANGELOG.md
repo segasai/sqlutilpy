@@ -2,6 +2,7 @@ Changelog
 
 # 0.28.0
 * upload(): strings containing the delimiter, backslashes, newlines, tabs or carriage returns are now escaped and survive the upload unchanged
+* upload(): numpy bytes arrays (dtype S) are now decoded as utf-8 and uploaded as strings, rather than being stored as the b'...' python literals
 * get(): intNullVal=None keeps the nulls in integer columns as None (the column is returned as an object array) instead of failing
 * get(): statements that do not return a result set no longer fail with sqlite3/duckdb
 * get(): use a unique server-side cursor name so that several batched queries can be run over the same connection

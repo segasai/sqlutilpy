@@ -518,6 +518,28 @@ def test_upload_special_chars(setup, delimiter):
         sqlutil.execute('drop table %s' % mytab, conn=conn)
 
 
+def test_upload_bytes(setup):
+    # numpy bytes (dtype S) arrays must be uploaded as the decoded
+    # strings rather than as the b'...' python literals
+    kw, conn = setup
+    mytab = 'sqlutil_test_bytes'
+    xstr = np.array(['plain', 'has|pipe', 'back\\slash', 'new\nline',
+                     '\xfcn\xefc\xf8de', ''])
+    xbytes = np.char.encode(xstr, 'utf-8')
+    assert xbytes.dtype.kind == 'S'
+    xi = np.arange(len(xstr))
+    sqlutil.upload(mytab, (xi, xbytes), ('xi', 'xstr'), conn=conn)
+    try:
+        yi, ystr = sqlutil.get('select xi, xstr from %s order by xi' %
+                               (mytab, ),
+                               conn=conn)
+        assert ((yi == xi).all())
+        for x, y in zip(xstr, ystr):
+            assert x == y
+    finally:
+        sqlutil.execute('drop table %s' % mytab, conn=conn)
+
+
 @pytest.mark.parametrize("batched", [True, False])
 def test_upload_big(setup, batched):
     kw, conn = setup
