@@ -1,6 +1,6 @@
 [project]
 name = "sqlutilpy"
-dynamic = ["version"] 
+dynamic = ["version"]
 description = "Database query code returning numpy arrays"
 authors = [
     {name = "Sergey E. Koposov", email = "skoposov@ed.ac.uk"},
@@ -11,21 +11,25 @@ dependencies = [
 ]
 requires-python = ">=3.10"
 readme = "README.md"
-license = {text = "BSD"}
-keywords = ["numpy postgresql query sql sqlite array"]
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
+keywords = ["numpy", "postgresql", "sqlite", "duckdb", "sql", "query", "array"]
 classifiers = [
-    "Development Status :: 5 - PRoduction/Stable",
-    "License :: OSI Approved :: BSD License",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Database",
     "Topic :: Utilities",
 ]
 
+[project.urls]
+Homepage = "https://github.com/segasai/sqlutilpy"
+Documentation = "https://sqlutilpy.readthedocs.io"
+Changelog = "https://github.com/segasai/sqlutilpy/blob/master/CHANGELOG.md"
+
 [build-system]
-requires = ["setuptools", "wheel", "setuptools-git-versioning"]
+requires = ["setuptools>=77", "setuptools-git-versioning"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools-git-versioning]
 enabled = true
-
-[project.urls]
-Homepage = "https://github.com/segasai/sqlutilpy"
-
