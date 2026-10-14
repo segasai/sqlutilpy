@@ -31,6 +31,26 @@ class SqlUtilException(Exception):
     pass
 
 
+SUPPORTED_DRIVERS = ('psycopg', 'sqlite3', 'duckdb')
+
+
+def __check_driver(driver):
+    """
+    Validate the driver name and return its canonical form.
+    The obsolete 'psycopg2' is accepted with a warning and mapped to
+    'psycopg'; any other unknown driver raises SqlUtilException
+    """
+    if driver == 'psycopg2':
+        warnings.warn(
+            'psycopg2 driver is not supported anymore using psycopg instead')
+        driver = 'psycopg'
+    if driver not in SUPPORTED_DRIVERS:
+        raise SqlUtilException(
+            'Unknown driver %r; supported drivers are %s' %
+            (driver, ', '.join(SUPPORTED_DRIVERS)))
+    return driver
+
+
 def getConnection(db=None,
                   driver=None,
                   user=None,
@@ -67,10 +87,7 @@ def getConnection(db=None,
          Database Connection
 
     """
-    if driver == 'psycopg2':
-        warnings.warn(
-            'psycopg2 driver is not supported anymore using psycopg instead')
-        driver = 'psycopg'
+    driver = __check_driver(driver)
     if driver == 'psycopg':
         conn_dict = dict()
         if db is not None:
@@ -92,8 +109,6 @@ def getConnection(db=None,
     elif driver == 'duckdb':
         import duckdb
         conn = duckdb.connect(db)
-    else:
-        raise Exception("Unknown driver")
     return conn
 
 
@@ -101,10 +116,7 @@ def getCursor(conn, driver=None, preamb=None, named=True):
     """
     Retrieve the database cursor
     """
-    if driver == 'psycopg2':
-        warnings.warn(
-            'psycopg2 driver is not supported anymore using psycopg instead')
-        driver = 'psycopg'
+    driver = __check_driver(driver)
     if driver == 'psycopg':
         cur = conn.cursor(scrollable=False)
         if preamb is not None:
@@ -127,8 +139,6 @@ def getCursor(conn, driver=None, preamb=None, named=True):
         cur = conn.cursor()
         if preamb is not None:
             cur.execute(preamb)
-    else:
-        raise SqlUtilException('unrecognized driver')
     return cur
 
 
@@ -204,9 +214,10 @@ def __fromrecords(recList, dtype=None, intNullVal=None, strNullVal='None'):
                 keep_object.append(name)
 
     if keep_object:
-        descr = np.dtype((np.record, [(_n, object if _n in keep_object else
-                                       dtype.fields[_n][0])
-                                      for _n in names]))
+        descr = np.dtype((np.record, [
+            (_n, object if _n in keep_object else dtype.fields[_n][0])
+            for _n in names
+        ]))
 
     # Cast to final dtype
     retval = arr.astype(descr)
@@ -316,15 +327,14 @@ def __fix_object_column(col, intNullVal, strNullVal):
     first_val = col[valid_mask][0]
 
     # INTEGER
-    if isinstance(first_val,
-                  (int, np.integer)) and not isinstance(
-                      first_val, (bool, np.bool_)):
+    if isinstance(
+            first_val,
+        (int, np.integer)) and not isinstance(first_val, (bool, np.bool_)):
         # Verify all valid are integers
         valid_vals = col[valid_mask]
         is_valid = all(
             isinstance(x, (int, np.integer))
-            and not isinstance(x, (bool, np.bool_))
-            for x in valid_vals)
+            and not isinstance(x, (bool, np.bool_)) for x in valid_vals)
         if is_valid:
             # Convert
             temp_col = np.copy(col)
@@ -370,8 +380,7 @@ def __fix_numpy_record_array(res, intNullVal, strNullVal):
 
         if col.dtype.kind == 'O':
             # We treat everything as candidates if it's Object type
-            new_arrays.append(
-                __fix_object_column(col, intNullVal, strNullVal))
+            new_arrays.append(__fix_object_column(col, intNullVal, strNullVal))
         else:
             new_arrays.append(col)
 
@@ -398,7 +407,7 @@ def __process_duckdb_column(col, intNullVal, strNullVal):
         elif kind == 'f':
             col = col.filled(np.nan)
         elif kind == 'M':
-            col = col.filled(np.datetime64('NaT'))
+            col = col.filled(np.array('NaT', dtype=col.dtype))
         else:
             # object columns (i.e. strings), booleans and integers
             # without a null replacement value become object columns
@@ -497,6 +506,7 @@ def get(query,
     >>> a, b = sqlutilpy.get('select ra,dec from rc3 where name=?', "NGC 3166")
     '''
 
+    driver = __check_driver(driver)
     connSupplied = (conn is not None)
     if not connSupplied:
         conn = getConnection(db=db,
@@ -507,10 +517,6 @@ def get(query,
                              port=port,
                              timeout=timeout)
     try:
-        if driver == 'psycopg2':
-            warnings.warn('psycopg2 driver is not supported anymore. '
-                          'We using psycopg instead')
-            driver = 'psycopg'
         if batched:
             # This is related to postgresql server cursors vs
             # application cursors
@@ -602,8 +608,7 @@ def get(query,
                 colNames = [_tmp[0] for _tmp in cur.description]
                 if len(tups) > 0:
                     res = numpy.rec.array(tups)
-                    res = __fix_numpy_record_array(res, intNullVal,
-                                                   strNullVal)
+                    res = __fix_numpy_record_array(res, intNullVal, strNullVal)
                 else:
                     res = [numpy.array([]) for _ in cur.description]
         elif driver == 'duckdb':
@@ -701,6 +706,7 @@ def execute(query,
     >>> sqlutil.execute('create table mytab (a int)', db='mydb')
 
     """
+    driver = __check_driver(driver)
     connSupplied = (conn is not None)
     if not connSupplied:
         conn = getConnection(db=db,
@@ -799,8 +805,8 @@ def __print_arrays(arrays, f, delimiter=' '):
         for x in arrays
     ]
     arrays = [
-        __escape_strings_for_copy(x, delimiter)
-        if x.dtype.kind == 'U' else x for x in arrays
+        __escape_strings_for_copy(x, delimiter) if x.dtype.kind == 'U' else x
+        for x in arrays
     ]
     recarr = np.rec.fromarrays(arrays)
     if not array_mode:
@@ -903,6 +909,7 @@ def upload(tableName,
     >>> T = astropy.Table({'x':[1, 2, 3], 'y':['a', 'b', 'c'])
     >>> sqlutilpy.upload('mytable', T)
     """
+    driver = __check_driver(driver)
     connSupplied = (conn is not None)
     if not connSupplied:
         conn = getConnection(db=db,
@@ -1029,6 +1036,7 @@ def local_join(query,
     ... 'mytable', (x, y), ('x', 'y'))
     """
 
+    driver = __check_driver(driver)
     connSupplied = (conn is not None)
     if not connSupplied:
         conn = getConnection(db=db,
