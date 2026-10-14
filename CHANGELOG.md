@@ -1,5 +1,10 @@
 Changelog
 
+# 0.29.0
+* get() with duckdb: fix the null replacement in narrow and unsigned integer columns (tinyint, utinyint, uinteger, ubigint) with numpy<2, where intNullVal was silently wrapped (e.g. -9999 became -15 in a tinyint column) instead of the column being widened to int64
+* This is the last release supporting numpy<2
+* An unknown driver name now raises SqlUtilException from get(), execute(), upload(), local_join(), getConnection() and getCursor() before any connection is attempted (it was added in 0.28.0)
+
 # 0.28.0
 * upload(): strings containing the delimiter, backslashes, newlines, tabs or carriage returns are now escaped and survive the upload unchanged
 * upload(): numpy bytes arrays (dtype S) are now decoded as utf-8 and uploaded as strings, rather than being stored as the b'...' python literals
