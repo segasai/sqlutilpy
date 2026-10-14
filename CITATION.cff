@@ -9,8 +9,6 @@ authors:
     email: "skoposov@ed.ac.uk"
     orcid: "https://orcid.org/0000-0003-2644-135X"
     affiliation: "Institute for Astronomy, University of Edinburgh"
-version: "0.29.0"
-date-released: "2026-10-14"
 license: "BSD-3-Clause"
 repository-code: "https://github.com/segasai/sqlutilpy"
 url: "https://sqlutilpy.readthedocs.io"
