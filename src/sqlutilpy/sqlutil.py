@@ -47,9 +47,8 @@ def __check_driver(driver):
             'psycopg2 driver is not supported anymore using psycopg instead')
         driver = 'psycopg'
     if driver not in SUPPORTED_DRIVERS:
-        raise SqlUtilException(
-            'Unknown driver %r; supported drivers are %s' %
-            (driver, ', '.join(SUPPORTED_DRIVERS)))
+        raise SqlUtilException('Unknown driver %r; supported drivers are %s' %
+                               (driver, ', '.join(SUPPORTED_DRIVERS)))
     return driver
 
 
@@ -124,12 +123,7 @@ def getConnection(*,
     return conn
 
 
-def getCursor(conn,
-              *,
-              driver=None,
-              preamb=None,
-              named=True,
-              notNamed=None):
+def getCursor(conn, *, driver=None, preamb=None, named=True, notNamed=None):
     """
     Retrieve the database cursor
 
@@ -158,10 +152,9 @@ def getCursor(conn,
     """
     if notNamed is not None:
         # the pre-0.27 spelling of named=not notNamed
-        warnings.warn(
-            'notNamed is deprecated; use named=not notNamed instead',
-            DeprecationWarning,
-            stacklevel=2)
+        warnings.warn('notNamed is deprecated; use named=not notNamed instead',
+                      DeprecationWarning,
+                      stacklevel=2)
         named = not notNamed
     driver = __check_driver(driver)
     if driver == 'psycopg':
@@ -536,7 +529,9 @@ def get(query,
         client-side cursor is used and the whole result is fetched at
         once, which needs about twice the memory, but lets PostgreSQL use
         parallel query plans, which can be several times faster for heavy
-        queries. This is the named argument of getCursor()
+        queries. The server-side cursor only accepts SELECT, VALUES,
+        TABLE and WITH statements, so statements such EXPLAIN, SHOW
+        must be run with batched=False
     asDict : bool, optional
         If True, return an ordered dictionary keyed by column name instead
         of a tuple of arrays. Repeated column names get a numeric suffix
