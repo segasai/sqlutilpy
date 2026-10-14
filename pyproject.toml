@@ -6,7 +6,7 @@ authors = [
     {name = "Sergey E. Koposov", email = "skoposov@ed.ac.uk"},
 ]
 dependencies = [
-    "numpy",
+    "numpy>=2",
     "psycopg[binary]"
 ]
 requires-python = ">=3.9"
