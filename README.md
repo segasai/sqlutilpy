@@ -40,7 +40,7 @@ This command will run the query and put the columns into variables ra,dec:
 
 ```python
 import sqlutilpy
-ra,dec = squtilpy.get('select ra,dec from mytable', 
+ra,dec = sqlutilpy.get('select ra,dec from mytable', 
                  host='HOST_NAME_OF_MY_PG_SERVER', 
                  db='THE_NAME_OF_MY_DB')
 ```
@@ -49,7 +49,19 @@ By default `sqlutilpy.get` executes the query and returns the tuple with
 arrays. One array for each column in the query result. 
 You can return the results as dictionary using `asDict` option.
 
-## Uploading your arrays as column in a table
+## SQLite and DuckDB
+
+The same `get()` and `execute()` functions work with SQLite and DuckDB
+files, by selecting the driver and giving the file name as the database:
+
+```python
+a, b = sqlutilpy.get('select a, b from mytable', db='mydata.db', driver='sqlite3')
+a, b = sqlutilpy.get('select a, b from mytable', db='mydata.duckdb', driver='duckdb')
+```
+
+Uploading tables and `local_join` are only available with PostgreSQL.
+
+## Uploading your arrays as columns in a table (PostgreSQL)
 
 You can use `sqlutilpy.upload` to upload your arrays as columns in a table.
 
@@ -60,7 +72,7 @@ sqlutilpy.upload('mytable',(x,y),('xcol','ycol'))
 ``` 
 This will create a table called `mytable` with columns `xcol` and `ycol` 
 
-## Join query involving your local data and the database table
+## Join query involving your local data and the database table (PostgreSQL)
 
 Sometimes it is beneficial to run a join query involving your local data and the data in the database.
 
@@ -84,7 +96,8 @@ is that it uploads the data to the database and runs a query against it.
 
 Often it is beneficial to preserve an open connection to the database. You can do that if you first 
 obtain the connection using `sqlutilpy.getConnection()` and then provide it directly
-to `sqlutil.get()` and similar commands using `conn=` keyword:
+to `sqlutilpy.get()` and similar commands using `conn=` keyword:
+```python
 conn = sqlutilpy.getConnection(db='mydb', user='meuser', password='something', host='hostname')
 R= sqlutilpy.get('select 1', conn=conn)
 R1= sqlutilpy.get('select 1', conn=conn)

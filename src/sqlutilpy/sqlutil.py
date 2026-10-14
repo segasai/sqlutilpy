@@ -1,4 +1,6 @@
-"""Sqlutilpy module to access SQL databases
+"""Query SQL databases (PostgreSQL, SQLite, DuckDB) and get numpy
+arrays back, upload numpy arrays as tables and join local arrays with
+database tables
 """
 import numpy
 import numpy as np
@@ -64,28 +66,37 @@ def getConnection(db=None,
 
     Parameters
     ----------
-
     db : string
-        The name of the database (in case of PostgreSQL) or filename in
-        case of sqlite db
-    driver :  string
-        The db driver (either 'psycopg' or 'sqlite3')
+        The name of the database (PostgreSQL) or the filename of the
+        database (SQLite, DuckDB). For DuckDB ':memory:' gives an
+        in-memory database. For PostgreSQL, if this and the other
+        connection details are not given, the libpq defaults and
+        environment variables (PGDATABASE, PGHOST, PGPORT, PGUSER) are used
+    driver : string
+        The database driver: 'psycopg' (PostgreSQL), 'sqlite3' or 'duckdb'
     user : string, optional
-        Username
-    password: string, optional
-        Password
+        Username (PostgreSQL only)
+    password : string, optional
+        Password (PostgreSQL only)
     host : string, optional
-        Host-name
-    port : integer
-        Connection port (by default 5432 for PostgreSQL)
-    timeout : integer
-        Connection timeout for sqlite
+        Hostname (PostgreSQL only)
+    port : integer, optional
+        Connection port (PostgreSQL only, by default 5432)
+    timeout : integer, optional
+        How long to wait for a locked database, in seconds
+        (SQLite only, by default 5)
 
     Returns
     -------
     conn : object
-         Database Connection
+        Database connection
 
+    Examples
+    --------
+    >>> conn = sqlutilpy.getConnection(db='mydb', host='myhost',
+    ...                                driver='psycopg')
+    >>> conn = sqlutilpy.getConnection(db='mydata.db', driver='sqlite3')
+    >>> conn = sqlutilpy.getConnection(db=':memory:', driver='duckdb')
     """
     driver = __check_driver(driver)
     if driver == 'psycopg':
@@ -115,6 +126,24 @@ def getConnection(db=None,
 def getCursor(conn, driver=None, preamb=None, named=True):
     """
     Retrieve the database cursor
+
+    Parameters
+    ----------
+    conn : object
+        Database connection
+    driver : string
+        The database driver: 'psycopg', 'sqlite3' or 'duckdb'
+    preamb : string, optional
+        SQL to be executed on the cursor before anything else
+    named : bool
+        If True (the default) and the driver is 'psycopg', a server-side
+        (named) cursor is returned, so that the results can be fetched in
+        batches. Ignored for the other drivers
+
+    Returns
+    -------
+    cur : object
+        Database cursor
     """
     driver = __check_driver(driver)
     if driver == 'psycopg':
@@ -441,72 +470,90 @@ def get(query,
         intNullVal=-9999,
         strNullVal='None',
         nthreads=1):
-    '''
-    Executes the sql query and returns the tuple or dictionary
-    with the numpy arrays.
+    """
+    Execute the SQL query and return the result as a tuple or dictionary
+    of numpy arrays, one array per column.
 
     Parameters
     ----------
     query : string
-        Query you want to execute, can include question
-        marks to refer to query parameters
-    params : tuple
+        The query to execute. It can contain placeholders for the query
+        parameters: %s for PostgreSQL, ? for SQLite and DuckDB
+    params : tuple, optional
         Query parameters
-    conn : object
-        The connection object to the DB (optional) to avoid reconnecting
-    asDict : boolean
-        Flag whether to retrieve the results as a dictionary with column
-        names as keys
-    strLength : integer
-        The minimum length allocated for string columns. If longer
-        strings are encountered, the allocated length is extended
-        to accommodate them
-    intNullVal : integer, optional
-        All the integer columns with nulls will have null replaced by
-        this value
-    strNullVal : string, optional
-        All the string columns with nulls will have null replaced by
-        this value
     db : string
-        The name of the database
+        The name of the database (PostgreSQL) or the filename of the
+        database (SQLite, DuckDB)
     driver : string, optional
-        The sql driver to be used (psycopg or sqlite3)
+        The database driver: 'psycopg' (PostgreSQL, the default),
+        'sqlite3' or 'duckdb'
     user : string, optional
-        User name for the DB connection
+        User name for the DB connection (PostgreSQL only)
     password : string, optional
-        DB connection password
+        DB connection password (PostgreSQL only)
     host : string, optional
-        Hostname of the database
+        Hostname of the database (PostgreSQL only)
     port : integer, optional
-        Port of the database
-    preamb : string
-        SQL code to be executed before the query
+        Port of the database (PostgreSQL only)
+    preamb : string, optional
+        SQL to be executed before the query
+    conn : object, optional
+        An existing connection to the DB (see getConnection()), to avoid
+        reconnecting. The connection is left open afterwards. The driver
+        argument must still match the connection
+    strLength : integer, optional
+        The minimum width allocated for string columns (PostgreSQL only).
+        If longer strings are encountered the width is extended to
+        accommodate them. With SQLite and DuckDB the width is always
+        inferred from the data
+    timeout : integer, optional
+        How long to wait for a locked database, in seconds (SQLite only)
     batched : bool, optional
-        Whether to use named or not-named cursor with PostgreSQL
-        The default setting of True leads to retrieval of results in batches
-        and on the fly conversion of
-        retrieved results into numpy, thus it will not use more memory than
-        needed to store the results of the query. The
-        The batched=False will use at least twice the amount of memory
-        needed to store the results, but with the benefit of faster query
-        execution, because these queries use PostgreSQL parallelism and thus
-        can be ~ a factor of few faster
+        PostgreSQL only. With the default of True the results are
+        retrieved through a server-side cursor in batches of
+        config.arraysize rows and converted to numpy on the fly, so the
+        memory use is about the size of the final arrays. With False the
+        whole result is fetched at once, which needs about twice the
+        memory, but lets PostgreSQL use parallel query plans, which can be
+        several times faster for heavy queries
+    asDict : bool, optional
+        If True, return an ordered dictionary keyed by column name instead
+        of a tuple of arrays. Repeated column names get a numeric suffix
+    intNullVal : integer or None, optional
+        The value that replaces nulls in integer columns (-9999 by
+        default). If None, integer columns with nulls are returned as
+        object arrays with None in place of the nulls
+    strNullVal : string, optional
+        The value that replaces nulls in string columns ('None' by
+        default)
+    nthreads : integer, optional
+        The number of threads used to convert the batches to numpy
+        in the batched PostgreSQL mode
+
     Returns
     -------
-    ret : Tuple or dictionary
-        By default you get a tuple with numpy arrays for each column
-        in your query.
-        If you specified asDict keyword then you get an ordered dictionary with
-        your columns.
+    ret : tuple or dictionary
+        A tuple with one numpy array per column of the query result, or,
+        with asDict=True, an ordered dictionary mapping the column names
+        to the arrays. Nulls in floating point columns become NaN, in
+        timestamp columns NaT; see intNullVal and strNullVal for the
+        integer and string columns
 
     Examples
     --------
-    >>> a, b, c = sqlutilpy.get('select ra,dec,d25 from rc3')
+    >>> ra, dec, d25 = sqlutilpy.get('select ra, dec, d25 from rc3',
+    ...                              host='myhost', db='mydb')
 
-    You can also use the parameters in your query:
+    With query parameters:
 
-    >>> a, b = sqlutilpy.get('select ra,dec from rc3 where name=?', "NGC 3166")
-    '''
+    >>> ra, dec = sqlutilpy.get('select ra, dec from rc3 where name = %s',
+    ...                         ('NGC 3166', ), host='myhost', db='mydb')
+
+    From a SQLite file:
+
+    >>> a, b = sqlutilpy.get('select a, b from tmp where a > ?', (3, ),
+    ...                      db='mydata.db', driver='sqlite3')
+    """
 
     driver = __check_driver(driver)
     connSupplied = (conn is not None)
@@ -678,35 +725,45 @@ def execute(query,
             timeout=None,
             noCommit=False):
     """
-    Execute a given SQL command without returning the results
+    Execute an SQL statement without returning any results
 
     Parameters
     ----------
-    query: string
-        The query or command you are executing
-    params: tuple, optional
-        Optional parameters of your query
+    query : string
+        The statement to execute. It can contain placeholders for the
+        parameters: %s for PostgreSQL, ? for SQLite and DuckDB
+    params : tuple, optional
+        Parameters of the statement
     db : string
-        Database name
-    driver : string
-        Driver for the DB connection ('psycopg' or 'sqlite3')
+        The name of the database (PostgreSQL) or the filename of the
+        database (SQLite, DuckDB)
+    driver : string, optional
+        The database driver: 'psycopg' (PostgreSQL, the default),
+        'sqlite3' or 'duckdb'
     user : string, optional
-        user name for the DB connection
+        User name for the DB connection (PostgreSQL only)
     password : string, optional
-        DB connection password
+        DB connection password (PostgreSQL only)
     host : string, optional
-        Hostname of the database
+        Hostname of the database (PostgreSQL only)
     port : integer, optional
-        Port of the database
-    noCommit: bool
-        By default execute() will commit your command.
-        If you say noCommit, the commit won't be issued.
+        Port of the database (PostgreSQL only)
+    conn : object, optional
+        An existing connection to the DB (see getConnection()), to avoid
+        reconnecting. The connection is left open afterwards
+    preamb : string, optional
+        SQL to be executed before the statement
+    timeout : integer, optional
+        How long to wait for a locked database, in seconds (SQLite only)
+    noCommit : bool, optional
+        By default the statement is committed. With noCommit=True the
+        commit is not issued
 
     Examples
     --------
-    >>> sqlutil.execute('drop table mytab', conn=conn)
-    >>> sqlutil.execute('create table mytab (a int)', db='mydb')
-
+    >>> sqlutilpy.execute('drop table mytab', conn=conn)
+    >>> sqlutilpy.execute('create table mytab (a int)', db='mydb')
+    >>> sqlutilpy.execute('insert into mytab values (%s)', (1, ), db='mydb')
     """
     driver = __check_driver(driver)
     connSupplied = (conn is not None)
@@ -865,42 +922,59 @@ def upload(tableName,
            createTable=True,
            delimiter='|'):
     """
-    Upload the data stored in the tuple of arrays in the DB
+    Upload the data stored in a tuple of arrays (or a table) into a new
+    table in the DB. PostgreSQL only.
 
     Parameters
     ----------
     tableName : string
         The name of the table where the data will be uploaded
-    arrays_or_table : tuple
-        Tuple of arrays that will be columns of the new table
-        If names are not specified, I this parameter can be pandas or
-        astropy table
-    names : tuple
-    db: string
-         Databas name
-    driver: string
-         Python database driver "psycopg",
-    user: string,
-    password: string
-    host: string
-    port: integer
-         Port of the database
-    conn: object
-         SQL connection
-    preamb: string
-         The string/query to be executed before your command
-    noCommit: bool
-         If true, the commit is not executed and the table will go away
-         after the disconnect
-    temp: bool
-         If true a temporary table will be created
-    analyze: bool
-         if True, the table will be analyzed after the upload
-    createTable: bool
-         if True the table will be created before uploading (default)
-    delimiter: string
-         the string used for delimiting the input data when ingesting into
-         the db (default is ``|``)
+    arrays : tuple, astropy.table.Table, pandas.DataFrame or dict
+        A tuple of arrays that will become the columns of the table, or
+        an astropy Table, pandas DataFrame or dictionary of arrays, in
+        which case the column names are taken from it and the names
+        argument must be omitted.
+        Integer, floating point, boolean, string (unicode or bytes;
+        bytes are decoded as utf-8), and datetime64 arrays are supported,
+        as well as object arrays holding numpy arrays, which become
+        array columns
+    names : tuple, optional
+        The column names (one per array). Characters that are not allowed
+        in identifiers (spaces, brackets, dashes) are replaced by
+        underscores, with a warning
+    db : string
+        Database name
+    driver : string
+        The database driver; only 'psycopg' is supported
+    user : string, optional
+        User name for the DB connection
+    password : string, optional
+        DB connection password
+    host : string, optional
+        Hostname of the database
+    port : integer, optional
+        Port of the database
+    conn : object, optional
+        An existing connection to the DB (see getConnection()), to avoid
+        reconnecting. The connection is left open afterwards
+    preamb : string, optional
+        SQL to be executed before the upload
+    timeout : integer, optional
+        Unused for PostgreSQL
+    noCommit : bool, optional
+        If True, the commit is not executed and the table goes away
+        when the connection is closed
+    temp : bool, optional
+        If True, a temporary table is created
+    analyze : bool, optional
+        If True, the table is analyzed after the upload
+    createTable : bool, optional
+        If True (the default), the table is created before uploading.
+        With False the data is appended to an existing table
+    delimiter : string, optional
+        The column delimiter used when sending the data to the DB
+        (the default is ``|``). Strings containing the delimiter are
+        escaped, so it can be any character
 
     Examples
     --------
@@ -908,7 +982,7 @@ def upload(tableName,
     >>> y = x**.5
     >>> sqlutilpy.upload('mytable', (x, y), ('xcol', 'ycol'))
 
-    >>> T = astropy.Table({'x':[1, 2, 3], 'y':['a', 'b', 'c'])
+    >>> T = astropy.table.Table({'x': [1, 2, 3], 'y': ['a', 'b', 'c']})
     >>> sqlutilpy.upload('mytable', T)
     """
     driver = __check_driver(driver)
@@ -1014,27 +1088,67 @@ def local_join(query,
                strNullVal='None',
                asDict=False):
     """
-    Join your local data in python with the data in the database
-    This command first uploads the data in the DB creating a temporary table
-    and then runs a user specified query that can your local data.
+    Join your local data in python with the data in the database.
+    PostgreSQL only.
+
+    This uploads the arrays into a temporary table and then runs the
+    query, which can refer to that table. The temporary table exists
+    only for the duration of the call.
 
     Parameters
     ----------
-    query : String with the query to be executed
-    tableName : The name of the temporary table that is going to be created
-    arrays : The tuple with list of arrays with the data to be loaded in the DB
-    names : The tuple with the column names for the user table
+    query : string
+        The query to be executed; it can refer to the table tableName
+    tableName : string
+        The name of the temporary table holding your data
+    arrays : tuple
+        The tuple of arrays with the data to be loaded in the DB
+    names : tuple
+        The column names of the temporary table (one per array)
+    db : string
+        Database name
+    driver : string
+        The database driver; only 'psycopg' is supported
+    user : string, optional
+        User name for the DB connection
+    password : string, optional
+        DB connection password
+    host : string, optional
+        Hostname of the database
+    port : integer, optional
+        Port of the database
+    conn : object, optional
+        An existing connection to the DB (see getConnection()), to avoid
+        reconnecting. The connection is left open afterwards
+    preamb : string, optional
+        SQL to be executed before the query
+    timeout : integer, optional
+        Unused for PostgreSQL
+    strLength : integer, optional
+        The minimum width allocated for string columns (see get())
+    intNullVal : integer or None, optional
+        The value that replaces nulls in integer columns (see get())
+    strNullVal : string, optional
+        The value that replaces nulls in string columns (see get())
+    asDict : bool, optional
+        If True, return an ordered dictionary keyed by column name instead
+        of a tuple of arrays
+
+    Returns
+    -------
+    ret : tuple or dictionary
+        The result of the query, as returned by get()
 
     Examples
     --------
-    This will extract the rows from the table sometable matching
-    to the provided array x
+    This extracts the rows of sometable matching the values of the
+    array x:
 
     >>> x = np.arange(10)
     >>> y = x**.5
     >>> sqlutilpy.local_join('''
-    ... SELECT s.* FROM mytable AS m LEFT JOIN sometable AS s
-    ... ON s.x = m.x ORDER BY m.xcol''',
+    ... select s.* from mytable as m left join sometable as s
+    ... on s.x = m.x order by m.x''',
     ... 'mytable', (x, y), ('x', 'y'))
     """
 
